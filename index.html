@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https:; connect-src https://he.wikipedia.org; font-src 'self' data:; form-action 'none'; base-uri 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>אטלס האימפריה הרומית — מפה אינטראקטיבית</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='47' fill='%2316294d' stroke='%23C8A33A' stroke-width='3'/%3E%3Cg fill='%238FA84E'%3E%3Cellipse cx='27' cy='72' rx='3.6' ry='6.4' transform='rotate(38 27 72)'/%3E%3Cellipse cx='23' cy='61' rx='3.6' ry='6.4' transform='rotate(16 23 61)'/%3E%3Cellipse cx='22' cy='50' rx='3.6' ry='6.4' transform='rotate(-4 22 50)'/%3E%3Cellipse cx='24' cy='39' rx='3.6' ry='6.4' transform='rotate(-24 24 39)'/%3E%3Cellipse cx='28' cy='29' rx='3.6' ry='6.4' transform='rotate(-44 28 29)'/%3E%3Cellipse cx='73' cy='72' rx='3.6' ry='6.4' transform='rotate(-38 73 72)'/%3E%3Cellipse cx='77' cy='61' rx='3.6' ry='6.4' transform='rotate(-16 77 61)'/%3E%3Cellipse cx='78' cy='50' rx='3.6' ry='6.4' transform='rotate(4 78 50)'/%3E%3Cellipse cx='76' cy='39' rx='3.6' ry='6.4' transform='rotate(24 76 39)'/%3E%3Cellipse cx='72' cy='29' rx='3.6' ry='6.4' transform='rotate(44 72 29)'/%3E%3C/g%3E%3Ctext x='50' y='58' text-anchor='middle' font-family='Georgia,serif' font-weight='700' font-size='22' fill='%23E9C46A'%3ESPQR%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -306,6 +306,41 @@
   }
   .leaflet-bar a{color:var(--navy)!important}
   ::-webkit-scrollbar{width:9px}::-webkit-scrollbar-thumb{background:var(--line);border-radius:5px}
+
+  /* ---------- Phone layout: the map gets the whole screen; the menu is a drawer that starts closed ---------- */
+  @media(max-width:700px){
+    html,body{overflow:hidden;overscroll-behavior:none}
+    #app{height:100dvh}
+    #sidebar{width:min(340px,88vw);min-width:0;z-index:1100;transition:transform .25s ease;box-shadow:4px 0 22px rgba(0,0,0,.3)}
+    #sidebar.collapsed{margin:0;transform:translateX(-102%);box-shadow:none}
+    #collapseBtn{display:none}
+    #mobileToggle{top:calc(10px + env(safe-area-inset-top));inset-inline-start:10px;z-index:1200;padding:10px 13px}
+    body.menuOpen #mobileToggle{background:#7a2f1f}
+    /* the ruler: one compact line under the menu button */
+    #rulerBar{top:calc(10px + env(safe-area-inset-top));left:10px;right:auto;transform:none;max-width:calc(100vw - 120px);
+      font-size:11.5px;padding:5px 9px;gap:5px;flex-wrap:nowrap;white-space:nowrap;overflow:hidden}
+    #rulerBar .ruler-name{font-size:12.5px}
+    #rulerBar .ruler-sep,#rulerBar .ruler-res,#rulerBar .ruler-city{display:none}
+    /* timeline: full width, era snaps in one scrolling row */
+    #timebar{left:6px;right:6px;width:auto;transform:none;bottom:calc(6px + env(safe-area-inset-bottom));padding:8px 10px;gap:9px}
+    #yearLabel{font-size:16px}
+    #eraLabel{font-size:11.5px;text-align:left}
+    #timeSlider{height:28px}
+    .tb-snaps{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+    .tb-snaps::-webkit-scrollbar{display:none}
+    .tb-snaps button{flex:0 0 auto;font-size:12px;padding:6px 9px}
+    /* map controls clear of the ruler; legend opens on demand above the timeline */
+    .leaflet-top.leaflet-left{top:calc(46px + env(safe-area-inset-top))}
+    .leaflet-bottom.leaflet-left,#legendReopen{bottom:calc(140px + env(safe-area-inset-bottom))}
+    .legend{max-height:40vh;overflow:auto}
+    .leaflet-control-attribution{font-size:9px;max-width:60vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .leaflet-bottom.leaflet-right{bottom:calc(132px + env(safe-area-inset-bottom))}
+    /* details, Wikipedia and trade cards: sheets from the bottom, over the timeline */
+    #floatCard,#tcCard{top:auto;bottom:calc(8px + env(safe-area-inset-bottom));left:6px;right:6px;width:auto;max-width:none;transform:none;max-height:62vh;z-index:1250}
+    #wikiPop{top:auto;bottom:calc(8px + env(safe-area-inset-bottom));left:6px;right:6px;width:auto;max-width:none;transform:none;max-height:70vh}
+    #floatClose,#tcClose,#wikiPop .wiki-x{width:32px;height:32px;font-size:20px}
+    .leaflet-popup-content{max-width:calc(100vw - 70px)}
+  }
 </style>
 </head>
 <body>
@@ -851,7 +886,7 @@ const baseOSM = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
   attribution:'רקע: © OpenStreetMap contributors (ODbL) · נתונים: DARE · ORBIS · AWMC · DARMC · siriusbontea (BSD)', maxZoom:9
 });
 baseNASA.addTo(map);
-L.control.layers({'🛰️ לוויין (NASA)':baseNASA, '🗺️ מפה (OpenStreetMap)':baseOSM}, null, {position:'topleft', collapsed:false}).addTo(map);
+L.control.layers({'🛰️ לוויין (NASA)':baseNASA, '🗺️ מפה (OpenStreetMap)':baseOSM}, null, {position:'topleft', collapsed:matchMedia('(max-width:700px)').matches}).addTo(map);
 
 const placeById = Object.fromEntries(PLACES.map(p=>[p[0],p]));
 const ll = c => [c[1],c[0]]; // lon,lat -> lat,lng
@@ -2160,8 +2195,21 @@ document.getElementById('collapseBtn').addEventListener('click',()=>{
   sidebar.classList.toggle('collapsed'); setTimeout(()=>map.invalidateSize(),300);
 });
 document.getElementById('mobileToggle').addEventListener('click',()=>{
-  sidebar.classList.toggle('collapsed'); setTimeout(()=>map.invalidateSize(),300);
+  sidebar.classList.toggle('collapsed'); setTimeout(()=>map.invalidateSize(),300); syncMenu();
 });
+// phones: the menu starts closed and closes again when the map is touched; the legend waits behind its button
+const phone=matchMedia('(max-width:700px)');
+function syncMenu(){
+  const open=phone.matches&&!sidebar.classList.contains('collapsed');
+  document.body.classList.toggle('menuOpen',open);
+  document.getElementById('mobileToggle').textContent=open?'✕ סגור':'☰ תפריט';
+}
+if(phone.matches){
+  sidebar.classList.add('collapsed'); syncMenu();
+  map.on('click',()=>{ if(!sidebar.classList.contains('collapsed')){ sidebar.classList.add('collapsed'); syncMenu(); } });
+  if(typeof legend!=='undefined'&&legend._div){ legend._div.style.display='none'; document.getElementById('legendReopen').style.display='block'; }
+}
+addEventListener('resize',()=>map.invalidateSize({pan:false}));
 
 function saveState(k,v){try{localStorage.setItem('ra_'+k,JSON.stringify(v));}catch(e){}}
 function loadState(k){try{return JSON.parse(localStorage.getItem('ra_'+k));}catch(e){return null;}}
