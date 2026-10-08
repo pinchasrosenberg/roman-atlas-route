@@ -22,16 +22,19 @@
 * **A playable timeline.** Cities appear when they are founded, then grow, shrink or fall, and the Empire's borders
   change through **15 terrain-accurate periods**. A guided tour stops at the Republic, 60 BC, Augustus, Trajan's
   maximum extent (117), the Severans (200), Diocletian and the decline.
-* **90 settlements** (cities, ports and forts), each with population, wealth, a changing ethnic mix and its main
+* **105 settlements** (cities, ports and forts), each with population, wealth, a changing ethnic mix and its main
   exports and imports.
-* **About 120 trade routes** by sea, land, river and military road, with volume and price in denarii per period. Sea
+* **113 trade routes** by sea, land, river and military road, with volume and price in denarii per period. Sea
   trade dries up during the third-century crisis.
 * **29 provinces** shaded by wealth and clipped to real coastlines (Egypt is separate from Syria), each with urban and
   rural population and its ethnic groups.
 * **The army:** legion bases, troop numbers and the conflict zones of each period.
 * **An accurate main-road network** as a background layer, a **trade calculator** between any two endpoints, and
-  filters for 23 commodities: grain, wine, olive oil, garum, silver, gold, iron, tin, copper, lead, marble, papyrus,
+  filters for 25 commodities: grain, wine, olive oil, garum, silver, gold, iron, tin, copper, lead, marble, papyrus,
   silk, purple dye, amber, ivory, slaves, wild beasts and more.
+* **Who ruled when:** a bar shows the emperor (or consuls) and the seat of power for the selected year.
+* **Wikipedia in place:** cities, provinces and rulers open a Hebrew Wikipedia summary inside the map.
+* **Two basemaps:** NASA satellite imagery (GIBS) or OpenStreetMap.
 * Full Hebrew right-to-left interface with search over cities, provinces and goods.
 
 ## How it is built
@@ -49,7 +52,8 @@ flowchart LR
 ```
 
 * **One file, no backend.** `index.html` holds the whole application with its data embedded, so it runs from any
-  static host or straight from disk. The only external requests are Leaflet (unpkg) and the Esri Ocean basemap tiles.
+  static host or straight from disk. External requests: Leaflet (unpkg, pinned with SRI), NASA GIBS / OpenStreetMap
+  tiles, and Hebrew Wikipedia summaries. A Content-Security-Policy blocks everything else.
 * **Reproducible geometry.** The Node scripts in `scripts/` turn the raw sources into the compact datasets in `data/`:
   period extents, coastline-clipped provinces and a filtered road network. They also generate the Word design
   specifications in `specs/`.
@@ -91,6 +95,10 @@ All quantities (prices, populations, volumes) are source-based **estimates for i
   knowledge graph and a read-only API.
 * [**wwii-build-manager**](https://github.com/pinchasrosenberg/wwii-build-manager) is a deterministic orchestrator for
   Codex and Claude Code workers.
+
+## Licensing of the sources
+
+See [`ATTRIBUTIONS.md`](ATTRIBUTIONS.md) for every source's license and attribution requirement.
 
 ## License
 

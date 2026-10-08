@@ -2,11 +2,11 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8">
-<!-- No network access beyond Leaflet (pinned with SRI) and the basemap tiles; nothing can be sent anywhere. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https://server.arcgisonline.com https://unpkg.com; connect-src 'none'; font-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https:; connect-src https://he.wikipedia.org; font-src 'self' data:; form-action 'none'; base-uri 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>אטלס האימפריה הרומית — מפה אינטראקטיבית</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='47' fill='%2316294d' stroke='%23C8A33A' stroke-width='3'/%3E%3Cg fill='%238FA84E'%3E%3Cellipse cx='27' cy='72' rx='3.6' ry='6.4' transform='rotate(38 27 72)'/%3E%3Cellipse cx='23' cy='61' rx='3.6' ry='6.4' transform='rotate(16 23 61)'/%3E%3Cellipse cx='22' cy='50' rx='3.6' ry='6.4' transform='rotate(-4 22 50)'/%3E%3Cellipse cx='24' cy='39' rx='3.6' ry='6.4' transform='rotate(-24 24 39)'/%3E%3Cellipse cx='28' cy='29' rx='3.6' ry='6.4' transform='rotate(-44 28 29)'/%3E%3Cellipse cx='73' cy='72' rx='3.6' ry='6.4' transform='rotate(-38 73 72)'/%3E%3Cellipse cx='77' cy='61' rx='3.6' ry='6.4' transform='rotate(-16 77 61)'/%3E%3Cellipse cx='78' cy='50' rx='3.6' ry='6.4' transform='rotate(4 78 50)'/%3E%3Cellipse cx='76' cy='39' rx='3.6' ry='6.4' transform='rotate(24 76 39)'/%3E%3Cellipse cx='72' cy='29' rx='3.6' ry='6.4' transform='rotate(44 72 29)'/%3E%3C/g%3E%3Ctext x='50' y='58' text-anchor='middle' font-family='Georgia,serif' font-weight='700' font-size='22' fill='%23E9C46A'%3ESPQR%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous"/>
 <style>
@@ -45,6 +45,25 @@
     border-radius:6px;cursor:pointer;white-space:nowrap;color:#4a4132}
   .tb-snaps button:hover{border-color:var(--blue);color:var(--blue)}
   @media(max-width:820px){#timebar{width:92vw;bottom:8px}}
+  /* רקע פתוח (CARTO ללא תוויות) בגוון קלף חמים */
+  .basemap-tiles{filter:sepia(.5) saturate(.62) brightness(1.02) contrast(.96)}
+  /* הרמת המקרא מעל ציר הזמן כדי שלא יתנגשו */
+  .leaflet-bottom.leaflet-left{bottom:128px}
+  @media(max-width:820px){.leaflet-bottom.leaflet-left{bottom:170px}}
+  /* שורת השליט (קיסר / קונסולים) למעלה */
+  #rulerBar{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:500;direction:rtl;
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;
+    background:linear-gradient(135deg,rgba(31,56,100,.96),rgba(46,84,150,.96));color:#fff;
+    border:1px solid rgba(200,163,58,.5);border-radius:11px;box-shadow:0 5px 18px rgba(0,0,0,.3);
+    padding:8px 16px;max-width:min(680px,82vw);font-size:13.5px}
+  #rulerBar .ruler-ico{font-size:16px}
+  #rulerBar .ruler-name{font-weight:800;color:#E9C46A;font-size:14.5px}
+  #rulerBar .ruler-sep{opacity:.45}
+  #rulerBar .ruler-reign{opacity:.9;font-variant-numeric:tabular-nums}
+  #rulerBar .ruler-res{opacity:.95}
+  #rulerBar .ruler-city{color:#fff;text-decoration:underline;cursor:pointer;font-weight:700}
+  #rulerBar .ruler-city:hover{color:#E9C46A}
+  @media(max-width:820px){#rulerBar{top:56px;font-size:12px;padding:6px 10px}}
   /* אנימציית זרימת סחר — מהירות לפי היקף הסחורה, כיוון = מוצא→יעד */
   @keyframes routeflow{to{stroke-dashoffset:-24}}
   .route-flow{animation-name:routeflow;animation-timing-function:linear;animation-iteration-count:infinite}
@@ -64,6 +83,9 @@
   #sidebar.collapsed{margin-inline-end:-300px}
   .sb-head{background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;padding:16px 18px;position:relative}
   .sb-head h1{margin:0;font-size:19px;font-weight:700;letter-spacing:.2px}
+  .sb-head .brand{display:flex;align-items:center;gap:11px}
+  .sb-head .brand-logo{flex:0 0 auto;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
+  .sb-head .brand-txt{min-width:0}
   .sb-head .sub{font-size:12px;opacity:.85;margin-top:3px}
   .sb-head .era{display:inline-block;margin-top:8px;font-size:11px;background:rgba(255,255,255,.18);padding:3px 9px;border-radius:20px}
   #collapseBtn{position:absolute;inset-inline-start:10px;top:14px;background:rgba(255,255,255,.15);
@@ -120,8 +142,32 @@
   #details .desc{font-size:13px;line-height:1.6;margin:10px 0;color:#3a3128}
   #details .goods{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
   #details .g{font-size:11.5px;padding:3px 9px;border-radius:20px;color:#fff}
+  #details .gnote{font-size:10.5px;color:#7a6f5c;line-height:1.5;margin-top:5px;padding:6px 8px;background:#f6efe0;border-right:2px solid #C8A33A;border-radius:4px}
+  #details .battle-sides{display:flex;align-items:center;justify-content:center;gap:8px;margin:9px 0;flex-wrap:wrap}
+  #details .battle-sides .side-a,#details .battle-sides .side-b{flex:1;min-width:90px;text-align:center;font-size:12px;font-weight:700;padding:7px 8px;border-radius:6px;line-height:1.35}
+  #details .battle-sides .side-a{background:#8B1E3F;color:#fff}
+  #details .battle-sides .side-b{background:#33404d;color:#fff}
+  #details .battle-sides .vs{font-size:11px;font-weight:700;color:#8B1E3F}
+  /* הסרת מלבן הפוקוס הכחול המכוער סביב נתיב/אזור שנבחר */
+  .leaflet-interactive:focus,.leaflet-container path:focus,.leaflet-container:focus,.leaflet-container *:focus{outline:none!important}
   #details .src{font-size:11px;color:var(--muted);margin-top:11px;border-top:1px solid var(--line);padding-top:8px}
   #details .src a{color:var(--blue)}
+  /* כרטיס פרטים צף ונגרר */
+  #floatCard{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:344px;max-width:92vw;max-height:84vh;display:none;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 16px 46px rgba(0,0,0,.32);z-index:1200;overflow:hidden}
+  #floatCard.show{display:flex}
+  #floatHead{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 13px;background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;cursor:move;user-select:none;flex:0 0 auto}
+  #floatHead #floatTitle{font-weight:700;font-size:13.5px;display:flex;align-items:center;gap:6px}
+  #floatHead #floatTitle::before{content:"⠿";opacity:.7;font-size:15px}
+  #floatClose{background:rgba(255,255,255,.2);border:0;color:#fff;width:25px;height:25px;border-radius:50%;cursor:pointer;font-size:17px;line-height:1;display:flex;align-items:center;justify-content:center}
+  #floatClose:hover{background:rgba(255,255,255,.38)}
+  #floatCard #details{overflow:auto;border:0;border-radius:0;padding:14px;flex:1 1 auto;min-height:0}
+  /* השוואת גדלי צבאות בקרב */
+  #details .army-cmp{margin:8px 0 4px}
+  #details .army-row{display:flex;align-items:center;gap:8px;font-size:12px;margin:5px 0}
+  #details .army-row .an{flex:0 0 44%;font-weight:700}
+  #details .army-row .abar{flex:1;height:12px;border-radius:6px;background:#eee;overflow:hidden}
+  #details .army-row .afill{height:100%}
+  #details .army-row .anum{flex:0 0 auto;font-variant-numeric:tabular-nums;color:#3a3128;font-weight:700}
 
   /* economics bars */
   .econ{margin-top:7px}
@@ -206,6 +252,9 @@
   @keyframes cpulse{0%{box-shadow:0 0 0 0 rgba(192,57,43,.55)}70%{box-shadow:0 0 0 16px rgba(192,57,43,0)}100%{box-shadow:0 0 0 0 rgba(192,57,43,0)}}
   @media (prefers-reduced-motion: reduce){.conflict-pulse{animation:none}}
 
+  /* אנימציית תנועה בדרכים */
+  .route-anim-ico{background:transparent;border:0}
+  .route-anim-ico span{font-size:15px;line-height:1;filter:drop-shadow(0 1px 1px rgba(0,0,0,.55))}
   /* legend on map */
   .legend{background:rgba(251,247,238,.95);padding:10px 12px;border-radius:9px;box-shadow:0 3px 12px rgba(0,0,0,.2);
     font-size:12px;line-height:1.7;direction:rtl;text-align:right;max-width:200px}
@@ -213,6 +262,33 @@
   .legend .li{display:flex;align-items:center;gap:8px}
   .legend .sw{width:20px;border-top-width:4px;border-top-style:solid}
   .legend .dot{width:11px;height:11px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #888}
+  .legend{position:relative}
+  #legendClose{position:absolute;top:6px;left:6px;width:20px;height:20px;border:0;border-radius:50%;background:#e6dcc4;color:#5a4a2a;font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  #legendClose:hover{background:#d8c9a6}
+  #legendReopen{display:none;position:fixed;bottom:128px;inset-inline-start:12px;z-index:600;background:rgba(251,247,238,.96);border:1px solid var(--line);border-radius:9px;box-shadow:0 3px 12px rgba(0,0,0,.25);padding:7px 12px;font-size:12.5px;font-weight:700;color:var(--navy);cursor:pointer;direction:rtl}
+  @media(max-width:820px){#legendReopen{bottom:170px}}
+  /* פופאפ ויקיפדיה */
+  #wikiPop{display:none;position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:1300;width:340px;max-width:92vw;max-height:78vh;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 16px 46px rgba(0,0,0,.34);direction:rtl}
+  #wikiPop .wiki-x{position:absolute;top:8px;left:8px;width:26px;height:26px;border:0;border-radius:50%;background:#eee;color:#333;font-size:17px;cursor:pointer;z-index:2}
+  #wikiPop .wiki-x:hover{background:#ddd}
+  #wikiPop .wiki-body{padding:14px 16px}
+  #wikiPop .wiki-h{font-weight:800;font-size:16px;color:var(--navy);margin-bottom:8px;padding-inline-end:28px}
+  #wikiPop .wiki-body img{float:left;width:118px;margin:0 0 8px 10px;border-radius:8px}
+  #wikiPop .wiki-body p{font-size:13px;line-height:1.65;color:#3a3128;margin:0 0 10px}
+  #wikiPop .wiki-body a{color:var(--blue);font-weight:700;font-size:13px;text-decoration:none;clear:both;display:inline-block}
+  .wiki-link{color:var(--blue);cursor:pointer;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap}
+  .wiki-link:hover{text-decoration:underline}
+  /* מחשבון סחר כפופאפ נגרר */
+  #tcCard{display:none;flex-direction:column;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1250;width:360px;max-width:92vw;max-height:82vh;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 16px 46px rgba(0,0,0,.34);overflow:hidden;direction:rtl}
+  #tcHead{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 13px;background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;font-weight:700;font-size:13.5px;cursor:move;user-select:none}
+  #tcClose{background:rgba(255,255,255,.2);border:0;color:#fff;width:25px;height:25px;border-radius:50%;cursor:pointer;font-size:17px;line-height:1}
+  #tcClose:hover{background:rgba(255,255,255,.38)}
+  #tcBody{padding:14px;overflow:auto}
+  .tc-origin{display:flex;align-items:center;gap:9px;background:#f6efe0;border:1px solid #e0d3b4;border-inline-start:4px solid var(--navy);border-radius:9px;padding:10px 12px;margin-bottom:9px}
+  .tc-origin .tc-lbl{font-size:11px;color:var(--muted);font-weight:700}
+  .tc-origin b{font-size:14.5px;color:var(--navy)}
+  .route-pick-btn{display:block;width:100%;margin:12px 0 2px;background:var(--navy);color:#fff;border:0;border-radius:9px;padding:11px;font-size:13px;font-weight:700;cursor:pointer}
+  .route-pick-btn:hover{background:var(--blue)}
 
   /* stat bar */
   #stats{display:flex;gap:8px;margin-bottom:14px}
@@ -235,6 +311,7 @@
 <body>
 <div id="app">
   <div id="map"></div>
+  <div id="rulerBar"></div>
   <div id="timebar">
     <button id="playBtn" title="נגן / עצור">▶</button>
     <div class="tb-main">
@@ -254,8 +331,28 @@
   <aside id="sidebar">
     <div class="sb-head">
       <button id="collapseBtn" title="הרחב/צמצם">⇥</button>
-      <h1>אטלס האימפריה הרומית</h1>
-      <div class="sub">כלכלה · דרכים · נתיבי סחר ימיים</div>
+      <div class="brand">
+        <svg class="brand-logo" viewBox="0 0 100 100" width="52" height="52" aria-hidden="true">
+          <circle cx="50" cy="50" r="47" fill="#16294d" stroke="#C8A33A" stroke-width="2.5"/>
+          <g fill="#8FA84E">
+            <ellipse cx="27" cy="72" rx="3.3" ry="6" transform="rotate(38 27 72)"/>
+            <ellipse cx="23" cy="62" rx="3.3" ry="6" transform="rotate(18 23 62)"/>
+            <ellipse cx="21.5" cy="51" rx="3.3" ry="6" transform="rotate(-2 21.5 51)"/>
+            <ellipse cx="23" cy="40" rx="3.3" ry="6" transform="rotate(-22 23 40)"/>
+            <ellipse cx="27" cy="30" rx="3.3" ry="6" transform="rotate(-42 27 30)"/>
+            <ellipse cx="73" cy="72" rx="3.3" ry="6" transform="rotate(-38 73 72)"/>
+            <ellipse cx="77" cy="62" rx="3.3" ry="6" transform="rotate(-18 77 62)"/>
+            <ellipse cx="78.5" cy="51" rx="3.3" ry="6" transform="rotate(2 78.5 51)"/>
+            <ellipse cx="77" cy="40" rx="3.3" ry="6" transform="rotate(22 77 40)"/>
+            <ellipse cx="73" cy="30" rx="3.3" ry="6" transform="rotate(42 73 30)"/>
+          </g>
+          <text x="50" y="57" text-anchor="middle" font-family="Georgia,'Times New Roman',serif" font-weight="700" font-size="20" fill="#E9C46A" letter-spacing="1">SPQR</text>
+        </svg>
+        <div class="brand-txt">
+          <h1>אטלס האימפריה הרומית</h1>
+          <div class="sub">כלכלה · דרכים · נתיבי סחר ימיים</div>
+        </div>
+      </div>
       <div class="era">חתך זמן: כ־200 לספירה</div>
     </div>
     <div class="sb-scroll">
@@ -281,19 +378,10 @@
         <div class="cc-hint">כבה/הדלק כל סחורה כדי לבחור מה מוצג על המפה. סחורה כבויה — הנתיבים והאזורים שלה נעלמים.</div>
       </div>
 
-      <div class="sec">
-        <h2>מחשבון סחר בין שני קצוות</h2>
-        <div class="tc-selects">
-          <select id="tcA"><option value="">בחר מוצא (עיר נמל / אזור)…</option></select>
-          <select id="tcB"><option value="">בחר יעד (עיר נמל / אזור)…</option></select>
-        </div>
-        <button id="tcBtn">חשב היקף סחר ↔</button>
-        <div id="tcResult"></div>
-      </div>
 
       <div class="sec">
         <h2>לוח פרטים</h2>
-        <div id="details"><div class="empty">בחר עיר, נתיב או אזור על המפה כדי לראות מידע מלא.</div></div>
+        <div class="empty" style="color:var(--muted);font-size:13px;text-align:center;padding:14px 6px">לחיצה על עיר, נתיב, אזור או קרב פותחת כרטיס פרטים נגרר במרכז המפה.</div>
       </div>
 
       <div class="sec">
@@ -301,14 +389,40 @@
         <div class="srcbox">
           <p><b>ORBIS</b> (Stanford, גרסה 2): מודל רשת גאו-מרחבי — 678 צמתים ו-1,104 נתיבים, מתוכם 268 נמלי ים; חתך זמן ~200 לספירה. בסיס לנתיבים ולזמני המסע.</p>
           <p><b>DARE</b> (אונ' לונד): אטלס דיגיטלי (היטל EPSG:3857) מבוסס Barrington Atlas ו-Pleiades, רישוי CC BY-SA. בסיס למיקום ולזיהוי היישובים.</p>
-          <p><b>OXREP</b> (אוקספורד): מסדי מכרות (~1,399 ב-v3), ספינות טרופות ובתי-בד לשמן וליין. בסיס לשכבת הכלכלה והחקלאות.</p>
-          <p class="note">היקפי הסחר והמחירים הם <b>אומדן להמחשה</b> ממודל ערך-יחסי. תעריפי השינוע מכוילים ליחס ההיסטורי ים : נהר : יבשה ≈ 1 : 5 : 34, הנגזר מצו המחירים של דיוקלטיאנוס (301 לספירה) וממחקרי Duncan-Jones ו-Scheidel.</p>
-          <p class="links"><a href="https://orbis.stanford.edu" target="_blank">ORBIS</a> · <a href="https://dh.gu.se/dare/" target="_blank">DARE</a> · <a href="https://oxrep.web.ox.ac.uk" target="_blank">OXREP</a></p>
+          <p><b>OXREP</b> (אוקספורד): מסדי מכרות, ספינות טרופות ובתי-בד לשמן וליין. בסיס לשכבת הכלכלה.</p>
+          <p><b>גבולות ודרכים</b>: <b>siriusbontea/roman-empire</b> (רישיון BSD-3) — גבולות ל-15 תקופות ורשת דרכים, הנגזרים מ-<b>AWMC</b> (CC BY), <b>DARMC</b>/Harvard "Roman Road Network 2008" (McCormick ואח') ו-<b>Natural Earth</b> (נחלת הכלל).</p>
+          <p><b>יישובים ותיארוך</b>: <b>Pleiades</b> ו-<b>DARE</b> (CC BY / CC BY-SA), <b>Vici.org</b> ו-<b>Wikidata</b> (CC0).</p>
+          <p><b>רקע וקוד</b>: אריחי <b>OpenStreetMap</b> (© OpenStreetMap contributors, ODbL); ספריית <b>Leaflet</b> (BSD). דמוגרפיה: Beloch, Frier, Scheidel.</p>
+          <p class="note">כל המקורות בשימוש חופשי עם קרדיט — הפרויקט נקי מתלות מסחרית סגורה. היקפי הסחר והמחירים הם <b>אומדן להמחשה</b>; תעריפי השינוע מכוילים ליחס ים : נהר : יבשה ≈ 1 : 5 : 34 (צו המחירים של דיוקלטיאנוס, 301 לספ'; Duncan-Jones, Scheidel).</p>
+          <p class="links"><a href="https://orbis.stanford.edu" target="_blank" rel="noopener noreferrer">ORBIS</a> · <a href="https://dh.gu.se/dare/" target="_blank" rel="noopener noreferrer">DARE</a> · <a href="https://oxrep.web.ox.ac.uk" target="_blank" rel="noopener noreferrer">OXREP</a> · <a href="https://pleiades.stoa.org" target="_blank" rel="noopener noreferrer">Pleiades</a> · <a href="https://awmc.unc.edu" target="_blank" rel="noopener noreferrer">AWMC</a> · <a href="https://github.com/siriusbontea/roman-empire" target="_blank" rel="noopener noreferrer">siriusbontea</a> · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OSM</a></p>
         </div>
       </div>
     </div>
   </aside>
 </div>
+
+<div id="floatCard">
+  <div id="floatHead"><span id="floatTitle">פרטים</span><button id="floatClose" title="סגור">×</button></div>
+  <div id="details"><div class="empty">בחר עיר, נתיב או אזור על המפה.</div></div>
+</div>
+
+<div id="wikiPop"></div>
+
+<div id="tcCard">
+  <div id="tcHead"><span>🧭 מחשבון סחר — בחירת מסלול</span><button id="tcClose" title="סגור">×</button></div>
+  <div id="tcBody">
+    <div class="tc-origin"><span class="tc-lbl">מוצא</span><b id="tcOriginName">—</b></div>
+    <div class="tc-selects">
+      <select id="tcA" hidden></select>
+      <select id="tcB"><option value="">בחר יעד…</option></select>
+    </div>
+    <button id="tcBtn">חשב היקף סחר ↔</button>
+    <div id="tcResult"></div>
+  </div>
+</div>
+
+<button id="legendReopen">🗺 מקרא</button>
+
 <button id="mobileToggle">☰ תפריט</button>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
@@ -343,8 +457,123 @@ const COMMODITIES = {
   wool:       {nameHe:"צמר",        cat:"חקלאות",  color:"#CBB89A"},
   silphium:   {nameHe:"סילפיון",    cat:"אחר",     color:"#8FA84E"},
   ivory:      {nameHe:"שנהב",       cat:"מותרות",  color:"#E8E2D0"},
-  spices:     {nameHe:"תבלינים",    cat:"מותרות",  color:"#B5651D"}
+  spices:     {nameHe:"תבלינים",    cat:"מותרות",  color:"#B5651D"},
+  pottery:    {nameHe:"כלי חרס/סיגילטה", cat:"תעשייה", color:"#A0522D"}
 };
+
+/* ======================================================================
+   GOODS_TIMELINE — הרכב הסחורות המשתנה לאורך הזמן, לכל נמל/נתיב מרכזי.
+   כל פריט: [שנת-התחלה, שנת-סוף(לא כולל), [סחורות], הערה]. שנה שלילית = לפנה"ס.
+   מבוסס מקורות: OXREP (Oxford Roman Economy), טיפולוגיית אמפורות Dressel,
+   הר טסטאצ'ו (שמן בטי), האנונה (תבואת מצרים/אפריקה), סיגילטה גאלית ו-African Red Slip.
+   נמל/נתיב שאינו כאן — מוצג בסחורות הסטטיות שלו כרגיל.
+   ====================================================================== */
+const GOODS_TIMELINE = {
+  rome: [
+    [-500,-30,["olive_oil","wine","grain","slaves","marble"],"רפובליקה: שמן ויין איטלקיים, תבואת סיציליה, ועבדים ממלחמות ההרחבה."],
+    [-30,96,["grain","olive_oil","wine","marble","slaves"],"אוגוסטוס–פלאבים: 'צי התבואה' ממצרים; שמן בטי (Dressel 20) מתחיל להציף את השוק."],
+    [96,235,["grain","olive_oil","wine","marble","wild_beasts"],"שיא האימפריה: שיא יבוא השמן הבטי (הר טסטאצ'ו, 160–200 לספ'); תבואת מצרים ואפריקה, יין גאלי."],
+    [235,330,["grain","olive_oil","wine","pottery","textiles"],"משבר ואיחוד מחדש: אפריקה משתלטת — שמן ותבואה אפריקאיים וכלי ARS דוחקים ספקים ותיקים."],
+    [330,477,["grain","olive_oil","wine","pottery"],"עת עתיקה מאוחרת: תבואת מצרים מוסטת לקונסטנטינופול; המערב תלוי כמעט כליל באפריקה."]
+  ],
+  ostia: [
+    [-500,46,["grain","wine","olive_oil"],"טרם פורטוס: נמל משני — רוב יבוא הבירה עובר דרך פוטאולי."],
+    [46,235,["grain","olive_oil","wine","marble","pottery"],"אחרי בניית פורטוס (קלאודיוס–טראיאנוס): נמל רומא הראשי — תבואה, שמן בטי, יין ושיש."],
+    [235,477,["grain","olive_oil","wine","pottery"],"עת מאוחרת: היבוא בעיקר אפריקאי — תבואה, שמן וכלי ARS."]
+  ],
+  puteoli: [
+    [-500,110,["grain","glass","wine","spices","incense"],"הנמל הראשי של איטליה: צי התבואה מאלכסנדריה ומותרות המזרח (תבלינים, בשמים)."],
+    [110,477,["glass","wine","fish"],"דועך עם עליית פורטוס/אוסטיה; נותר מרכז זכוכית ויין מקומי."]
+  ],
+  alexandria: [
+    [-500,-30,["grain","papyrus","glass","spices"],"מצרים התלמית: תבואה, פפירוס וזכוכית; שער מתפתח לסחר הים האדום."],
+    [-30,235,["grain","papyrus","glass","spices","silk","ivory"],"אימפריה: 'צי התבואה' לרומא; שיא סחר הודו–הים האדום — תבלינים, משי ושנהב."],
+    [235,330,["grain","papyrus","glass","spices"],"משבר המאה השלישית: התבואה עדיין לרומא; סחר המזרח מצטמצם."],
+    [330,477,["grain","papyrus","glass"],"אחרי 330: התבואה מוסטת לקונסטנטינופול החדשה."]
+  ],
+  carthage: [
+    [-500,-146,["grain","olive_oil","purple_dye","ivory"],"קרתגו הפונית: תבואה, שמן, ארגמן וסחר טרנס-סהרי (שנהב)."],
+    [-146,-46,["grain","olive_oil"],"אחרי החורבן (146 לפנה\"ס): האזור בשיקום; תבואה ושמן חוזרים בהדרגה."],
+    [-46,235,["grain","olive_oil","pottery"],"קולוניה רומית: ספקית תבואה ושמן מרכזית; כלי ARS מתחילים."],
+    [235,477,["grain","olive_oil","pottery","textiles"],"שיא הדומיננטיות האפריקאית: שמן, תבואה וכלי ARS שולטים בשוק הים-תיכוני."]
+  ],
+  gades: [
+    [-500,-30,["silver","fish","olive_oil","wine"],"רפובליקה: כסף ומתכות דרום ספרד, גארום ושמן; נמל אטלנטי ותיק."],
+    [-30,235,["olive_oil","fish","silver","wine"],"אימפריה: שיא יצוא השמן הבטי (Dressel 20) והגארום צפונה לרומא ולריין."],
+    [235,477,["olive_oil","fish"],"עת מאוחרת: יצוא השמן דועך (Dressel 23) אך נמשך בקנה מידה קטן."]
+  ],
+  hispalis: [
+    [-30,235,["olive_oil","grain","silver"],"נמל הנהר של בטיקה: דרכו הועמס השמן הבטי (Dressel 20) לייצוא לרומא."],
+    [235,477,["olive_oil","grain"],"יצוא השמן מצטמצם אך נמשך תחת האימפריה המאוחרת."]
+  ],
+  malaca: [
+    [-500,-30,["fish","olive_oil"],"מרכז ייצור גארום ותרכובות דגים בחוף הבטי."],
+    [-30,300,["fish","olive_oil","wine"],"שיא ייצור הגארום הבטי ליצוא ברחבי הים התיכון."],
+    [300,477,["fish","olive_oil"],"ייצור נמשך בהיקף מצומצם."]
+  ],
+  massilia: [
+    [-500,-30,["wine","olive_oil","slaves"],"רפובליקה: יבוא יין איטלקי (Dressel 1) לגאליה; יצוא עבדים ומתכות דרומה."],
+    [-30,100,["wine","olive_oil","pottery"],"ראשית האימפריה: יין גאלי מקומי עולה; סיגילטה מדרום גאליה (La Graufesenque)."],
+    [100,477,["wine","olive_oil","pottery","textiles"],"יצוא יין גאלי (Gauloise 4) וסיגילטה ממרכז גאליה (Lezoux) צפונה."]
+  ],
+  narbo: [
+    [-118,-30,["wine","grain","slaves"],"רפובליקה: צומת Via Domitia; יבוא יין איטלקי ויצוא תוצרת מקומית."],
+    [-30,100,["wine","grain","pottery"],"ראשית האימפריה: יין גאלי וסיגילטה דרום-גאלית מתחילים לזרום."],
+    [100,477,["wine","grain","pottery","olive_oil"],"שיא: יצוא יין וסיגילטה גאליים; יבוא שמן בטי."]
+  ],
+  arelate: [
+    [-30,235,["grain","wine","olive_oil","pottery"],"נמל הרון: צומת מפתח — יין וסיגילטה גאליים במעלה, שמן בטי ותבואה למטה."],
+    [235,477,["grain","wine","pottery"],"מרכז מנהלי עולה בגאליה המאוחרת; סחר נהר נמשך."]
+  ],
+  londinium: [
+    [43,235,["tin","lead","silver","wool"],"אחרי הכיבוש (43 לספ'): יצוא בדיל, עופרת, כסף וצמר; יבוא יין, שמן וסיגילטה."],
+    [235,410,["tin","lead","wool","grain"],"אימפריה מאוחרת: יצוא מתכות וצמר, ותבואה בריטית לאספקת צבא הריין."]
+  ],
+  leptis: [
+    [-46,193,["olive_oil","ivory","gold","wild_beasts"],"שער הסחר הטרנס-סהרי: שמן זית, שנהב, זהב וחיות בר צפונה."],
+    [193,235,["olive_oil","ivory","wild_beasts","marble"],"תחת ספטימיוס סוורוס (בן העיר): שיא הפריחה והבנייה."],
+    [235,477,["olive_oil","wild_beasts"],"דעיכה הדרגתית עם משבר האימפריה."]
+  ],
+  utica: [
+    [-500,-146,["grain","olive_oil","purple_dye"],"נמל פוני ותיק: תבואה, שמן וארגמן."],
+    [-146,235,["grain","olive_oil","pottery"],"תחת רומא: ספק תבואה ושמן; כלי ARS מתחילים."],
+    [235,477,["grain","olive_oil","pottery","textiles"],"שיא הייצוא האפריקאי: תבואה, שמן וכלי ARS."]
+  ],
+  byzantium: [
+    [-660,330,["grain","fish","wine"],"מושבה יוונית השולטת במצרי הבוספורוס: מכס וסחר תבואה ומלח-דגים מהים השחור."],
+    [330,477,["grain","fish","wine","olive_oil","silk","textiles"],"אחרי 330: קונסטנטינופול — 'רומא החדשה'. 'צי התבואה' המצרי מוסט להזנתה, לצד תבואת הים השחור; השלטון אסר מעבר תבואה, יין, שמן ומשי דרך המצרים וכפה מכירה בעיר עצמה (מעמד 'סטאפל'). מסוף מערבי של דרך המשי."]
+  ],
+  // ── נתיבים ──
+  r_alex_ostia: [
+    [-30,235,["grain","papyrus","glass","spices"],"צי התבואה ממצרים לרומא בעונת הקיץ; לצדו פפירוס, זכוכית ומותרות המזרח."],
+    [235,330,["grain","papyrus","glass"],"משבר: התבואה עדיין זורמת מערבה, סחר המותרות מצטמצם."],
+    [330,477,["papyrus","glass"],"אחרי 330: התבואה מוסטת לקונסטנטינופול — הנתיב מתרוקן מתבואה."]
+  ],
+  r_alex_puteoli: [
+    [-200,110,["grain","papyrus","spices","incense"],"צי התבואה ומותרות המזרח לנמל הראשי של איטליה."],
+    [110,477,["papyrus","spices"],"התבואה עוברת לפורטוס; נותר סחר פפירוס ומותרות מצטמצם."]
+  ],
+  r_carthage_ostia: [
+    [-46,235,["grain","olive_oil","pottery"],"אפריקה מזינה את רומא: תבואה ושמן, ובהמשך כלי ARS."],
+    [235,477,["grain","olive_oil","pottery","textiles"],"שיא: אפריקה שולטת באספקת רומא — תבואה, שמן וכלי ARS."]
+  ],
+  r_const_grain_egypt: [
+    [-500,330,["grain","papyrus"],"טרם 330: סחר תבואה ופפירוס מהמצרים אל האגאי, בהיקף מוגבל."],
+    [330,477,["grain","papyrus"],"אחרי 330: 'צי התבואה' המצרי מפנה מסלול לקונסטנטינופול — עורק החיים של הבירה החדשה, עד אובדן מצרים במאה ה-7."]
+  ],
+  r_const_silk: [
+    [330,477,["silk","spices","textiles"],"דרך המשי הימית: משי, תבלינים ואריגי יוקרה מהמזרח מגיעים דרך אנטיוכיה למחסני קונסטנטינופול."]
+  ]
+};
+
+/* מחזיר את הסחורות וההערה המתאימות לשנה הנוכחית; אם אין ציר-זמן — הסטטיות. */
+function goodsForYear(id, fallback){
+  const tl = GOODS_TIMELINE[id];
+  if(tl){
+    for(const s of tl){ if(curYear>=s[0] && curYear<s[1]) return {goods:s[2], note:s[3]||null}; }
+  }
+  return {goods:(fallback||[]), note:null};
+}
 
 const SRC = {
   orbis:{label:"ORBIS — Stanford", url:"https://orbis.stanford.edu"},
@@ -354,16 +583,16 @@ const SRC = {
 
 // PLACES — [id, nameHe, nameLatin, lon, lat, type, importance, province, isPort, commodities, desc, sources]
 const PLACES = [
-  ["rome","רומא","Roma",12.4964,41.9028,"city",5,"Italia",false,["wine","olive_oil","marble","slaves"],"בירת האימפריה והצרכן הגדול בעולם העתיק; יעד סופי של תבואת מצרים ואפריקה, שמן ספרד ויין איטליה.",["dare"]],
+  ["rome","רומא","Roma",12.4964,41.9028,"city",5,"Italia",false,["wine","olive_oil","marble","slaves"],"בירת האימפריה והעיר הראשונה בהיסטוריה שחצתה מיליון תושבים (שיא במאות ה-1–2 לספ'). מטרופולין קוסמופוליטי — לטינים, יוונים, סורים, יהודים ומצרים — והצרכן הגדול בעולם העתיק: יעד 'צי התבואה' ממצרים ומאפריקה, שמן זית בטי ויין הפרובינציות.",["dare"]],
   ["ostia","אוסטיה","Ostia",12.29,41.755,"port",4,"Italia",true,["grain","olive_oil","wine"],"נמל רומא בשפך הטיבר; דרכו זרמו מרבית היבוא של הבירה, ובראשו התבואה.",["dare","orbis"]],
   ["puteoli","פוטאולי","Puteoli",14.12,40.82,"port",4,"Italia",true,["grain","glass","wine"],"הנמל המסחרי הראשי של איטליה עד עליית אוסטיה; שער לצי התבואה מאלכסנדריה.",["dare","orbis"]],
-  ["alexandria","אלכסנדריה","Alexandria",29.9187,31.2001,"port",5,"Aegyptus",true,["grain","papyrus","glass"],"מטרופולין ונמל־על; ממנה יצא 'צי התבואה' לרומא וכן פפירוס וזכוכית.",["dare","oxrep"]],
-  ["antioch","אנטיוכיה","Antiochia",36.16,36.20,"city",5,"Syria",false,["silk","textiles","wine"],"עיר שלישית בגודלה באימפריה; מסוף מערבי של דרכי השיירות המזרחיות (משי, בשמים).",["dare"]],
+  ["alexandria","אלכסנדריה","Alexandria",29.9187,31.2001,"port",5,"Aegyptus",true,["grain","papyrus","glass"],"העיר השנייה בגודלה באימפריה (כ-500 אלף תושבים): יוונים ומקדונים, מצרים, וקהילה יהודית ענקית (כשליש מהעיר). מגדלור פארוס והספרייה הגדולה; נמל-העל שממנו יצא 'צי התבואה' לרומא, ושער סחר הים האדום–הודו (תבלינים, משי, שנהב).",["dare","oxrep"]],
+  ["antioch","אנטיוכיה","Antiochia",36.16,36.20,"city",5,"Syria",false,["silk","textiles","wine"],"העיר השלישית בגודלה באימפריה (כ-400 אלף תושבים) על נהר האורונטס; בירת השושלת הסלאוקית לשעבר ומרכז מנהלי־צבאי מזרחי. מסוף מערבי של דרכי השיירות (משי, בשמים) ואחד ממרכזי הנצרות הקדומים (כאן נקראו המאמינים לראשונה 'נוצרים').",["dare"]],
   ["carthage","קרתגו","Carthago",10.32,36.85,"port",4,"Africa",true,["grain","olive_oil"],"מרכז פרובינקיית אפריקה; ספקית תבואה ושמן זית מרכזית לרומא.",["dare","oxrep"]],
   ["ephesus","אפסוס","Ephesus",27.34,37.94,"port",4,"Asia",true,["textiles","marble","wine"],"נמל וראש פרובינקיית אסיה; צומת סחר בין האגאי לפנים אנטוליה.",["dare"]],
   ["corinth","קורינתוס","Corinthus",22.93,37.94,"port",4,"Achaea",true,["wine","textiles"],"עיר צומת השולטת בשני נמלים; מעבר סחר מפתח בין האגאי לאדריאטי.",["dare","orbis"]],
   ["athens","אתונה","Athenae",23.73,37.98,"city",4,"Achaea",false,["marble","wine","olive_oil"],"מרכז תרבותי; יצוא שיש (פנטליקון) ושמן זית.",["dare"]],
-  ["byzantium","ביזנטיון","Byzantium",28.98,41.01,"port",4,"Thracia",true,["grain","fish"],"שולטת על מיצרי הבוספורוס; צוואר הבקבוק של סחר הים השחור.",["dare","orbis"]],
+  ["byzantium","ביזנטיון · קונסטנטינופול","Byzantium / Constantinopolis",28.98,41.01,"port",5,"Thracia",true,["grain","fish","wine","silk"],"מושבה יוונית קטנה (נוסדה כ-660 לפנה\"ס) השולטת במצרי הבוספורוס — צוואר הבקבוק של סחר הים השחור. בשנת 330 לספ' ייסד אותה מחדש קונסטנטינוס כ'רומא החדשה' (קונסטנטינופול), והיא הפכה לבירת האימפריה ולעיר הגדולה במזרח. 'צי התבואה' המצרי הופנה להזנתה, ומעמדה השולט במצרים הפך אותה למחסן הסחר (staple) בין אירופה לאסיה — מסוף מערבי של דרך המשי.",["dare","orbis"]],
   ["gades","גאדס","Gades",-6.29,36.53,"port",4,"Baetica",true,["olive_oil","silver","fish"],"נמל אטלנטי; יצוא שמן זית בטי, גארום ומתכות מדרום ספרד.",["dare","oxrep"]],
   ["corduba","קורדובה","Corduba",-4.78,37.89,"city",4,"Baetica",false,["olive_oil","silver","copper"],"בירת בטיקה על נהר הבטיס; לב אזור השמן והמכרות.",["dare","oxrep"]],
   ["massilia","מסיליה","Massilia",5.37,43.30,"port",4,"Gallia Narbonensis",true,["wine","olive_oil"],"נמל יווני עתיק בדרום גאליה; שער יבוא/יצוא של יין וסחורות.",["dare","orbis"]],
@@ -447,11 +676,31 @@ const PLACES = [
   ["zeugma","זאוגמה","Zeugma",37.87,37.06,"fort",3,"Syria",false,["silk","grain"],"מעבר הפרת ומחנה לגיון; שער לסחר המזרח.",["dare"]],
   ["melitene","מליטנה","Melitene",38.32,38.35,"fort",2,"Cappadocia",false,["grain","iron"],"מבצר לגיון בגבול הפרתי.",["dare"]],
   ["satala","סטלה","Satala",39.60,40.03,"fort",2,"Cappadocia",false,["grain","iron"],"מבצר לגיון בגבול הצפוני־מזרחי.",["dare"]],
-  ["dura","דורא אירופוס","Dura Europos",40.73,34.75,"fort",2,"Syria",false,["silk","textiles"],"מבצר גבול על הפרת; תחנת שיירות.",["dare"]]
+  ["dura","דורא אירופוס","Dura Europos",40.73,34.75,"fort",2,"Syria",false,["silk","textiles"],"מבצר גבול על הפרת; תחנת שיירות.",["dare"]],
+
+  // --- ערים נוספות (הרחבת רשת ORBIS) ---
+  ["nicomedia","ניקומדיה","Nicomedia",29.92,40.77,"port",4,"Bithynia",true,["marble","textiles","grain"],"בירת ביתיניה ונמל; בירתו המזרחית של דיוקלטיאנוס — מרכז מנהלי-צבאי ומסוף סחר.",["dare","orbis"]],
+  ["cyzicus","קיזיקוס","Cyzicus",27.88,40.38,"port",3,"Asia",true,["grain","fish","marble"],"נמל על הפרופונטיס; שער תבואה ודגה מהים השחור.",["dare"]],
+  ["miletus","מילטוס","Miletus",27.28,37.53,"port",3,"Asia",true,["wool","textiles"],"נמל אגאי עתיק; מרכז אריגה וצמר.",["dare"]],
+  ["sardis","סרדיס","Sardis",28.04,38.49,"city",3,"Asia",false,["textiles","gold"],"בירת לידיה לשעבר; מרכז אריגים ובעבר מקור זהב (נהר הפקטולוס).",["dare"]],
+  ["laodicea","לאודיקיאה","Laodicea",29.11,37.83,"city",3,"Asia",false,["textiles","wool"],"מרכז בנקאות ואריגי צמר שחור באסיה.",["dare"]],
+  ["sirmium","סירמיום","Sirmium",19.61,44.97,"city",4,"Pannonia",false,["grain","iron"],"אחת מבירות הטטררכיה על נהר הסבה; מרכז אספקה צבאי לחזית הדנובה.",["dare"]],
+  ["serdica","סרדיקה","Serdica",23.32,42.70,"city",3,"Thracia",false,["silver","iron"],"צומת בלקני ומרכז מכרות; עיר חביבה על קונסטנטינוס.",["dare","oxrep"]],
+  ["philippi","פיליפי","Philippi",24.29,41.01,"city",3,"Macedonia",false,["gold","grain"],"עיר על Via Egnatia; מכרות זהב סמוכים (הר פנגאיון).",["dare"]],
+  ["barcino","ברקינו","Barcino",2.17,41.39,"port",3,"Tarraconensis",true,["wine","olive_oil"],"נמל על חוף ספרד; יצוא יין לאיטליה ולגאליה.",["dare"]],
+  ["genua","גנואה","Genua",8.93,44.41,"port",3,"Italia",true,["wine","iron"],"נמל ליגורי; שער סחר לצפון איטליה.",["dare"]],
+  ["hadrumetum","הדרומטום","Hadrumetum",10.64,35.83,"port",3,"Africa",true,["olive_oil","grain","pottery"],"נמל אפריקאי מרכזי; שמן זית, תבואה וכלי ARS.",["dare","oxrep"]],
+  ["cirta","קירטה","Cirta",6.61,36.36,"city",3,"Numidia",false,["grain","olive_oil"],"בירת נומידיה; מרכז חקלאי של תבואה ושמן.",["dare"]],
+  ["apamea","אפמיאה","Apamea",36.40,35.42,"city",3,"Syria",false,["textiles","wine"],"עיר גדולה בעמק האורונטס; אריגים ויין.",["dare"]],
+  ["trapezus","טרפזוס","Trapezus",39.72,41.00,"port",3,"Pontus",true,["silver","fish"],"נמל בקצה הדרומי-מזרחי של הים השחור; מסוף כסף ודגה.",["dare"]],
+  ["paphos","פאפוס","Paphos",32.41,34.77,"port",3,"Cyprus",true,["copper","wine"],"בירת קפריסין הרומית ונמל; נחושת ויין.",["dare","oxrep"]]
 ];
 
 // ROUTES — [id, originId, destId, mode, travelDays, volume(1-5), commodities, [waypoints lon,lat], season, sources]
 const ROUTES = [
+  ["r_const_grain_egypt","alexandria","byzantium","sea",13,5,["grain","papyrus"],[[29.92,31.2],[28,33.2],[26.2,35.6],[25.3,37.2],[26.4,39.6],[28.98,41.01]],"summer",["orbis"]],
+  ["r_const_grain_bs","panticapaeum","byzantium","sea",6,4,["grain","fish"],[[36.47,45.35],[33,44],[30.2,42.6],[28.98,41.01]],"summer",["dare"]],
+  ["r_const_silk","seleucia","byzantium","sea",9,3,["silk","textiles","spices"],[[35.92,36.12],[33,36.4],[30,38.4],[28.98,41.01]],"summer",["dare"]],
   ["r_alex_ostia","alexandria","ostia","sea",14,5,["grain","papyrus","glass"],[[29.9,31.2],[26,32.5],[19,35],[15.5,37.6],[12.6,38.5],[12.29,41.75]],"summer",["orbis"]],
   ["r_alex_puteoli","alexandria","puteoli","sea",13,4,["grain","papyrus"],[[29.9,31.2],[25,33],[18,36],[15.6,37.9],[14.12,40.82]],"summer",["orbis"]],
   ["r_carthage_ostia","carthage","ostia","sea",5,5,["grain","olive_oil"],[[10.32,36.85],[11,38.6],[11.8,40.2],[12.29,41.75]],"summer",["orbis"]],
@@ -595,9 +844,14 @@ const ZONES = [
 const map = L.map('map',{minZoom:3,maxZoom:9,worldCopyJump:false,zoomControl:true})
   .setView([40,20],5);
 L.control.zoom({position:'topleft'}); // default present
-L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}',{
-  attribution:'רקע: Esri Ocean · נתונים: ORBIS · DARE · OXREP', maxZoom:10
-}).addTo(map);
+const baseNASA = L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg',{
+  attribution:'רקע לוויין: NASA EOSDIS GIBS (נחלת הכלל) · נתונים: DARE · ORBIS · AWMC · DARMC · siriusbontea (BSD)', maxNativeZoom:8, maxZoom:9, tileSize:256
+});
+const baseOSM = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  attribution:'רקע: © OpenStreetMap contributors (ODbL) · נתונים: DARE · ORBIS · AWMC · DARMC · siriusbontea (BSD)', maxZoom:9
+});
+baseNASA.addTo(map);
+L.control.layers({'🛰️ לוויין (NASA)':baseNASA, '🗺️ מפה (OpenStreetMap)':baseOSM}, null, {position:'topleft', collapsed:false}).addTo(map);
 
 const placeById = Object.fromEntries(PLACES.map(p=>[p[0],p]));
 const ll = c => [c[1],c[0]]; // lon,lat -> lat,lng
@@ -662,7 +916,7 @@ function maturity(age){ return age<0?0 : age>=120?1 : 0.30+0.70*(age/120); }
 // גורם הגודל של עיר בשנה נתונה (0..1) — משלב שגשוג-עידן והתבגרות
 function sizeFactor(id,y){ return Math.max(0.05, urbanFactor(y)*maturity(y-foundedOf(id))); }
 // אוכלוסייה מוערכת בשנה נתונה
-function popAt(id,y){ if(!placeActive(id)) return 0; return Math.round(popOf(id)*sizeFactor(id,y)/500)*500; }
+function popAt(id,y){ if(!placeActive(id)) return 0; if(typeof POP_CURVE!=='undefined'&&POP_CURVE[id]) return POP_CURVE[id](y); return Math.round(popOf(id)*sizeFactor(id,y)/500)*500; }
 
 // "עיוורון ימי": עצמת הסחר הימי לפי שנה (0..1) — שיא במאה 1-2, קריסה במשבר המאה ה-3
 function tradeIntensity(y){
@@ -747,12 +1001,31 @@ function compBars(total,branches){
       <div class="eval">נפח: ${fmt(br.units)} יח' · מחיר: ${fmt(br.den)} דינרים</div></div>`;
   }).join('')+'</div>';
 }
-// יצוא/יבוא לכל יישוב: יצוא = נתיבים שיוצאים ממנו, יבוא = נתיבים שנכנסים אליו
+// יצוא/יבוא לכל יישוב: יצוא = נתיבים שיוצאים ממנו, יבוא = נתיבים שנכנסים אליו.
+// טמפורלי: הן ההיקף והן הרכב הסחורות משתנים לפי השנה — נתיבים ימיים/נהריים לפי
+// עוצמת הסחר הימי, יבשתיים לפי השגשוג העירוני, וסחורות כל נתיב לפי GOODS_TIMELINE.
+function eraTradeFactor(mode,y){ return (mode==='sea'||mode==='river') ? tradeIntensity(y) : (0.55+0.45*urbanFactor(y)); }
 function placeEconomics(id){
-  return {
-    ex: aggregateEcon(routeDataAll.filter(r=>r.o===id)),
-    im: aggregateEcon(routeDataAll.filter(r=>r.d===id))
+  const y=curYear;
+  const eraGoods=new Set(goodsForYear(id,[]).goods);   // סחורות "בעונה" של היישוב בתקופה זו
+  const build=list=>{
+    const m={}; let total=0, totalUnits=0;
+    list.forEach(rd=>{
+      const f=eraTradeFactor(rd.mode,y);
+      const goods=goodsForYear(rd.id, rd.goods).goods;
+      routeEconomics({vol:rd.vol, goods}).branches.forEach(b=>{
+        // הטיה לפי ההרכב ההיסטורי של התקופה: סחורה "בעונה" במשקל מלא, אחרת מעומעמת
+        const w=eraGoods.size ? (eraGoods.has(b.c)?1:0.3) : 1;
+        const units=Math.round(b.units*f*w), den=Math.round(b.den*f*w);
+        if(units<=0) return;
+        if(!m[b.c]) m[b.c]={den:0,units:0};
+        m[b.c].den+=den; m[b.c].units+=units; total+=den; totalUnits+=units;
+      });
+    });
+    const branches=Object.entries(m).map(([c,v])=>({c,den:v.den,units:v.units})).sort((a,b)=>b.den-a.den);
+    return {total,totalUnits,branches};
   };
+  return { ex: build(routeDataAll.filter(r=>r.o===id)), im: build(routeDataAll.filter(r=>r.d===id)) };
 }
 
 /* ---- עוגת קבוצות אתניות ---- */
@@ -781,13 +1054,17 @@ const _wv=Object.values(placeWealth).filter(v=>v>0);
 const wealthMax=Math.max(..._wv,1), wealthMin=Math.min(..._wv,0);
 const wealthNorm=id=> wealthMax>wealthMin ? Math.max(0,(placeWealth[id]-wealthMin)/(wealthMax-wealthMin)) : 0.5;
 
-const POP_OVERRIDE={rome:1000000,alexandria:500000,antioch:300000,carthage:250000,ephesus:200000,pergamon:180000,smyrna:100000,corinth:90000,athens:75000,tarsus:70000,puteoli:65000,gades:65000,thessalonica:60000,lugdunum:60000,mediolanum:55000,byzantium:45000,neapolis:40000,syracuse:45000,caesarea:45000};
+const POP_OVERRIDE={rome:1000000,alexandria:500000,antioch:400000,carthage:250000,ephesus:200000,pergamon:180000,smyrna:100000,corinth:90000,athens:75000,tarsus:70000,puteoli:65000,gades:65000,thessalonica:60000,lugdunum:60000,mediolanum:55000,byzantium:400000,neapolis:40000,syracuse:45000,caesarea:45000};
+// עקומות אוכלוסייה מיוחדות לערים שאינן מצייתות לעקומת השגשוג הכללית.
+// ביזנטיון: מושבה קטנה עד 330, ואז זינוק כקונסטנטינופול ('רומא החדשה').
+const POP_CURVE={ byzantium: y => y<330 ? 25000 : Math.round(Math.min(400000, 25000+(y-330)*2600)/1000)*1000 };
 function _hashFrac(s){let x=0;for(let i=0;i<s.length;i++)x=(x*31+s.charCodeAt(i))>>>0;return (x%1000)/1000;}
 function popOf(id){ if(POP_OVERRIDE[id])return POP_OVERRIDE[id]; const p=placeById[id]; const base={5:400000,4:110000,3:28000,2:8000,1:3000}[p[6]]||10000; return Math.round(base*(0.7+_hashFrac(id)*0.6)/1000)*1000; }
 
 // הרכב אתני של עיר: ברירת מחדל = הרכב הפרובינקיה; חריגים לערים בולטות
 const CITY_ETHNIC={
-  alexandria:[["יוונים",45,"יוונית"],["מצרים",35,"מצרית"],["יהודים",15,"ארמית/יוונית"],["רומאים",5,"לטינית"]],
+  alexandria:[["יוונים/מקדונים",40,"יוונית"],["מצרים",33,"מצרית"],["יהודים",22,"ארמית/יוונית"],["רומאים ואחר",5,"לטינית"]],
+  byzantium:[["יוונים",68,"יוונית"],["תראקים",18,"תראקית"],["רומאים ומזרחיים",14,"לטינית/יוונית"]],
   jerusalem:[["יהודים",88,"ארמית/עברית"],["יוונים-סורים",8,"יוונית"],["רומאים",4,"לטינית"]],
   rome:[["רומאים/לטינים",66,"לטינית"],["יוונים",13,"יוונית"],["סורים/מזרחיים",9,"ארמית/יוונית"],["יהודים",7,"ארמית"],["אחר",5,"—"]],
   carthage:[["פונים",45,"פונית"],["ברברים/לובים",30,"לובית"],["רומאים",25,"לטינית"]],
@@ -979,22 +1256,40 @@ function ethnicAt(profile, conqYear, year){
 }
 
 /* ---- אזורי סכסוך לפי תקופה — [שם, lon, lat, from, to, עוצמה 1-3, ~חיילים] ---- */
+// [name, lon, lat, from, to, intensity, soldiers, צד א', צד ב', סיכום]
 const CONFLICTS = [
-  ["המלחמות הפוניות",13.5,37.2,-264,-146,3,120000],
-  ["מלחמת גאליה (קיסר)",3.5,47.5,-58,-50,3,60000],
-  ["מלחמת האזרחים (פרסלוס)",22,39.6,-49,-45,2,80000],
-  ["טבח יער טויטובורג",8.5,52,7,16,3,30000],
-  ["מרד בודיקה",-0.4,52.3,60,61,2,20000],
-  ["המרד הגדול ביהודה",35.2,32,66,73,3,60000],
-  ["מלחמות דקיה (טראיאנוס)",23,45.5,101,106,3,150000],
-  ["מלחמות פרתיה",40,35,114,166,2,80000],
-  ["מרד בר-כוכבא",35.2,31.6,132,135,3,70000],
-  ["המלחמות המרקומניות",16.5,48,166,180,3,140000],
-  ["מלחמת האזרחים (193)",13,42.5,193,197,2,90000],
-  ["משבר המאה השלישית",23,44,235,284,3,200000],
-  ["מרד תדמור (זנוביה)",38.3,34.5,270,273,3,70000],
-  ["פלישות והתמוטטות המערב",11,44,406,476,3,120000]
+  ["המלחמות הפוניות",13.5,37.2,-264,-146,3,120000,"רומא","קרתגו","שלוש מלחמות (264–146 לפנה\"ס) על השליטה בים התיכון המערבי. חניבעל חצה את האלפים והביס את רומא בקאנאי (216 לפנה\"ס), אך רומא ניצחה; במלחמה השלישית נהרסה קרתגו עד היסוד."],
+  ["מלחמת גאליה (קיסר)",3.5,47.5,-58,-50,3,60000,"רומא (יוליוס קיסר)","השבטים הגאליים","יוליוס קיסר כבש את כל גאליה בשמונה שנות מערכה. המרד המאוחד בהנהגת ורקינגטוריקס הוכרע במצור אָלֶסְיָה (52 לפנה\"ס)."],
+  ["מלחמת האזרחים (פרסלוס)",22,39.6,-49,-45,2,80000,"יוליוס קיסר","פומפיוס והסנאט","מלחמת אזרחים על השלטון ברפובליקה. קיסר הביס את פומפיוס בקרב פַרְסָלוֹס (48 לפנה\"ס) ופתח את דרכו לשלטון יחיד."],
+  ["טבח יער טויטובורג",8.5,52,7,16,3,30000,"השבטים הגרמנים (ארמיניוס)","רומא (ורוס)","ארמיניוס הכחיד שלושה לגיונות של ורוס ביער טויטובורג (9 לספ'). האסון עצר לתמיד את התפשטות רומא מזרחה לנהר הריין."],
+  ["מרד בודיקה",-0.4,52.3,60,61,2,20000,"שבטי בריטניה (בודיקה)","רומא","מרד האִיקֶני בהנהגת המלכה בודיקה. שלוש ערים (קמולודונום, לונדיניום וּורולמיום) נשרפו עד שהמושל סווטוניוס פאולינוס דיכא את המרד."],
+  ["המרד הגדול ביהודה",35.2,32,66,73,3,60000,"היהודים","רומא (אספסיאנוס וטיטוס)","המרד הגדול (66–73). טיטוס כבש את ירושלים והחריב את בית המקדש השני (70 לספ'); מצדה נפלה כשלוש שנים אחר כך."],
+  ["מלחמות דקיה (טראיאנוס)",23,45.5,101,106,3,150000,"רומא (טראיאנוס)","ממלכת דקיה (דקבלוס)","טראיאנוס כבש את דקיה לאחר שתי מערכות. השלל ומכרות הזהב מומחשים על 'עמוד טראיאנוס' ברומא."],
+  ["מלחמות פרתיה",40,35,114,166,2,80000,"רומא","האימפריה הפרתית","סדרת מלחמות על ארמניה ומסופוטמיה (114–166). טראיאנוס ולאחריו לוקיוס ורוס הגיעו עד קטסיפון, אך הגבול נותר בעינו."],
+  ["מרד בר-כוכבא",35.2,31.6,132,135,3,70000,"היהודים (שמעון בר-כוכבא)","רומא (אדריאנוס)","המרד היהודי השני והאחרון (132–135) דוכא באכזריות. יהודה שוממה וּשמהּ הוסב ל'סוריה פלשתינה'."],
+  ["המלחמות המרקומניות",16.5,48,166,180,3,140000,"רומא (מרקוס אורליוס)","השבטים הגרמנים (מרקומנים וקוואדים)","מלחמות קשות על גבול הדנובה (166–180), מונצחות על 'עמוד מרקוס אורליוס'; סימן ראשון להתגברות הלחץ הברברי."],
+  ["מלחמת האזרחים (193)",13,42.5,193,197,2,90000,"ספטימיוס סוורוס","יריביו (ניגר ואלבינוס)","'שנת חמשת הקיסרים'. ספטימיוס סוורוס הביס את מתחריו בזה אחר זה והקים את השושלת הסוורית."],
+  ["משבר המאה השלישית",23,44,235,284,3,200000,"רומא (קיסרי-חיילים)","פולשים ומתפלגים","כחמישים שנות כאוס (235–284): עשרות קיסרים, פלישות גותים וסאסאנים, והתפלגות ל'אימפריה הגאלית' ולתדמור. דיוקלטיאנוס ייצב את המצב."],
+  ["מרד תדמור (זנוביה)",38.3,34.5,270,273,3,70000,"אימפריית תדמור (זנוביה)","רומא (אורליאנוס)","המלכה זנוביה השתלטה על כל המזרח — מצרים, סוריה ואסיה הקטנה. הקיסר אורליאנוס הביסהּ וכבש את תדמור (273)."],
+  ["פלישות והתמוטטות המערב",11,44,406,476,3,120000,"רומא המערבית","השבטים הברברים (גותים, ונדלים, הונים)","חציית הריין (406), ביזת רומא בידי אלריך הגותי (410) ובידי הוונדלים (455), ולבסוף הדחת רומולוס אוגוסטולוס (476) — קץ האימפריה הרומית המערבית."]
 ];
+// גודל משוער של כל צבא בשיא הסכסוך (אומדן להמחשה), לפי סדר [צד א', צד ב'] שב-CONFLICTS
+const BATTLE_SIZES={
+  "המלחמות הפוניות":[80000,50000],
+  "מלחמת גאליה (קיסר)":[45000,90000],
+  "מלחמת האזרחים (פרסלוס)":[22000,45000],
+  "טבח יער טויטובורג":[18000,20000],
+  "מרד בודיקה":[80000,10000],
+  "המרד הגדול ביהודה":[25000,60000],
+  "מלחמות דקיה (טראיאנוס)":[100000,50000],
+  "מלחמות פרתיה":[70000,50000],
+  "מרד בר-כוכבא":[200000,120000],
+  "המלחמות המרקומניות":[140000,100000],
+  "מלחמת האזרחים (193)":[90000,90000],
+  "משבר המאה השלישית":[200000,200000],
+  "מרד תדמור (זנוביה)":[70000,80000],
+  "פלישות והתמוטטות המערב":[100000,120000]
+};
 
 // שיוך כל יישוב לפרובינקיה: בתוך הפוליגון, ואחרת לפרובינקיה הקרובה ביותר (ערי חוף)
 function _distSeg(px,py,a,b){const dx=b[0]-a[0],dy=b[1]-a[1];const t=Math.max(0,Math.min(1,((px-a[0])*dx+(py-a[1])*dy)/((dx*dx+dy*dy)||1)));return Math.hypot(px-(a[0]+t*dx),py-(a[1]+t*dy));}
@@ -1045,9 +1340,9 @@ const groups = {
 };
 
 const MODE = {
-  road:    {color:"#9C5A2B", nameHe:"דרך יבשתית", dash:"16,8"},
-  military:{color:"#8B1E3F", nameHe:"דרך צבאית",  dash:"2,6"},
-  sea:     {color:"#1D5C8C", nameHe:"נתיב ימי",   dash:"8,16"},
+  road:    {color:"#E7A24E", nameHe:"דרך יבשתית", dash:"16,8"},
+  military:{color:"#E24A63", nameHe:"דרך צבאית",  dash:"2,6"},
+  sea:     {color:"#E9B84A", nameHe:"נתיב ימי",   dash:"8,16"},
   river:   {color:"#2E9B96", nameHe:"נתיב נהר",    dash:"4,8"}
 };
 
@@ -1139,26 +1434,35 @@ Object.entries(LEGION_BASES).forEach(([id,legions])=>{
 /* ------- render conflict zones (active by era) ------- */
 const conflictMarkers=[];
 CONFLICTS.forEach(cf=>{
-  const [name,lon,lat,from,to,intensity,soldiers]=cf;
+  const [name,lon,lat,from,to,intensity,soldiers,sideA,sideB,summary]=cf;
   const size=22+intensity*10;
   const icon=L.divIcon({className:'conflict-ico',
     html:`<div class="conflict-pulse i${intensity}" style="width:${size}px;height:${size}px"><span>⚔</span></div>`,
     iconSize:[size,size],iconAnchor:[size/2,size/2]});
   const mk=L.marker([lat,lon],{icon,pane:'conflictPane'});
-  mk._data={kind:'conflict',name,from,to,intensity,soldiers};
+  const _sz=BATTLE_SIZES[name]||null;
+  mk._data={kind:'conflict',name,from,to,intensity,soldiers,sides:[sideA,sideB],summary,sizes:_sz};
   mk.on('click',()=>selectConflict(mk));
-  mk.bindTooltip(`${name} · ${fmtYear(from)}–${fmtYear(to)}`,{direction:'top',className:'zt'});
+  mk.bindTooltip(`⚔ <b>${name}</b> · ${fmtYear(from)}–${fmtYear(to)}`+(_sz?`<br><span style="color:#8B1E3F">${sideA}</span> ${fmt(_sz[0])} &nbsp;נגד&nbsp; <span style="color:#33404d">${sideB}</span> ${fmt(_sz[1])}`:''),{direction:'top',className:'zt bt'});
   mk.addTo(groups.conflicts); conflictMarkers.push(mk);
 });
 function selectConflict(mk){
   resetHighlight(); selected=null; curSelect=()=>selectConflict(mk);
   const d=mk._data;
+  const activeNow=(curYear>=d.from&&curYear<=d.to);
   detailsEl.innerHTML=`
     <h3>⚔ ${d.name}</h3>
-    <span class="kind" style="color:#8B1E3F">אזור סכסוך</span>
-    <div class="tnow${(curYear>=d.from&&curYear<=d.to)?'':' off'}">🕓 ${fmtYear(curYear)} · ${(curYear>=d.from&&curYear<=d.to)?'הסכסוך פעיל':'לא פעיל בשנה זו'}</div>
-    <div class="row"><span>${fmtYear(d.from)} – ${fmtYear(d.to)}</span><b>תקופת הסכסוך</b></div>
-    <div class="tc-total" style="background:linear-gradient(135deg,#8B1E3F,#b0324f)"><b>≈ ${fmt(d.soldiers)} חיילים</b><span>כוחות שהיו מעורבים בשיא הסכסוך (אומדן)</span></div>
+    <span class="kind" style="color:#8B1E3F">קרב / סכסוך</span> <a class="wiki-link" data-wiki="${d.name}">🔗 ויקיפדיה</a>
+    <div class="tnow${activeNow?'':' off'}">🕓 ${fmtYear(curYear)} · ${activeNow?'הסכסוך פעיל':'לא פעיל בשנה זו'}</div>
+    <div class="row"><span>${fmtYear(d.from)} – ${fmtYear(d.to)}</span><b>תקופה</b></div>
+    ${d.sides?`<div class="battle-sides"><span class="side-a">${d.sides[0]}</span><span class="vs">נגד</span><span class="side-b">${d.sides[1]}</span></div>`:''}
+    ${d.sizes?`<b style="font-size:12px;color:#7a6f5c;display:block;margin-top:6px">כוח כל צבא (אומדן שיא)</b>
+    <div class="army-cmp">
+      <div class="army-row"><span class="an" style="color:#8B1E3F">${d.sides[0]}</span><span class="abar"><span class="afill" style="width:${Math.round(d.sizes[0]/Math.max(d.sizes[0],d.sizes[1])*100)}%;background:#8B1E3F"></span></span><span class="anum">${fmt(d.sizes[0])}</span></div>
+      <div class="army-row"><span class="an" style="color:#33404d">${d.sides[1]}</span><span class="abar"><span class="afill" style="width:${Math.round(d.sizes[1]/Math.max(d.sizes[0],d.sizes[1])*100)}%;background:#33404d"></span></span><span class="anum">${fmt(d.sizes[1])}</span></div>
+    </div>`:''}
+    <div class="tc-total" style="background:linear-gradient(135deg,#8B1E3F,#b0324f)"><b>≈ ${fmt(d.sizes?d.sizes[0]+d.sizes[1]:d.soldiers)} חיילים בסך הכל</b><span>סך הכוחות המעורבים בשיא (אומדן)</span></div>
+    ${d.summary?`<div class="desc">${d.summary}</div>`:''}
     <div class="io-note">אומדן להמחשה של היקף הכוחות והתקופה.</div>`;
 }
 
@@ -1189,6 +1493,50 @@ ROUTES.forEach(r=>{
   line.bindTooltip(`${placeById[o][1]} ← → ${placeById[d][1]} · שינוע ${_tcp} ד'/יח'`+(_tf?` · ~${_tf.toLocaleString('en-US')} חיילים/שנה`:''),{sticky:true});
   line.addTo(groups[mode]); routeLayers.push(line);
 });
+
+/* ------- אנימציית תנועה: ספינות (ים), סחורות (יבשה), לגיונות (צבא) ------- */
+const COMMODITY_EMOJI={grain:'🌾',olive_oil:'🫒',wine:'🍷',papyrus:'📜',gold:'💰',silver:'🪙',copper:'🟤',iron:'⚙️',tin:'🔩',marble:'🏛️',glass:'🫙',purple_dye:'🟣',textiles:'🧵',fish:'🐟',silk:'🧶',wild_beasts:'🦁',slaves:'⛓️',lead:'◾',incense:'🪔',amber:'🟠',wool:'🐑',silphium:'🌿',ivory:'🦷',spices:'🌶️',pottery:'🏺'};
+const _reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const animMarkers=[];
+routeLayers.forEach(l=>{
+  const pts=l.getLatLngs(); if(!pts||pts.length<2) return;
+  const seg=[]; let total=0;
+  for(let i=1;i<pts.length;i++){ const dd=map.distance(pts[i-1],pts[i]); seg.push({a:pts[i-1],b:pts[i],d:dd}); total+=dd; }
+  if(total<=0) return;
+  const isMil=l._data.mode==='military';
+  const goodsArr=l._data.goods||[];
+  const em0 = isMil ? '🛡️' : (COMMODITY_EMOJI[goodsArr[0]]||'📦');
+  const icon=L.divIcon({className:'route-anim-ico',html:`<span>${em0}</span>`,iconSize:[20,20],iconAnchor:[10,10]});
+  const mk=L.marker(pts[0],{icon,interactive:false,keyboard:false});
+  mk._seg=seg; mk._total=total; mk._u=Math.random(); mk._route=l;
+  mk._speed=0.05+0.028*(l._data.vol||1);   // מהירות התנועה לפי היקף הסחר
+  mk._isMil=isMil; mk._goodsArr=goodsArr; mk._curEm=em0;
+  mk._shown=true; mk.addTo(map); animMarkers.push(mk);
+});
+function _posAt(mk){
+  let dist=mk._u*mk._total, i=0;
+  while(i<mk._seg.length-1 && dist>mk._seg[i].d){ dist-=mk._seg[i].d; i++; }
+  const s=mk._seg[i], t=s.d?Math.min(1,dist/s.d):0;
+  return L.latLng(s.a.lat+(s.b.lat-s.a.lat)*t, s.a.lng+(s.b.lng-s.a.lng)*t);
+}
+let _animLast=performance.now();
+function _animTick(now){
+  const dt=Math.min(0.08,(now-_animLast)/1000); _animLast=now;
+  for(const mk of animMarkers){
+    if(mk._route._hidden || !map.hasLayer(mk._route)){ if(mk._shown){ mk.setOpacity(0); mk._shown=false; } continue; }
+    if(!mk._shown){ mk.setOpacity(1); mk._shown=true; }
+    if(!mk._isMil){   // האימוג'י הזורם = הסחורה הנבחרת הראשונה בנתיב
+      const g=mk._goodsArr.find(x=>commodityVisible[x]) || mk._goodsArr[0];
+      const em=COMMODITY_EMOJI[g]||'📦';
+      if(em!==mk._curEm){ mk.setIcon(L.divIcon({className:'route-anim-ico',html:'<span>'+em+'</span>',iconSize:[20,20],iconAnchor:[10,10]})); mk._curEm=em; }
+    }
+    mk._u=(mk._u+mk._speed*dt)%1;
+    mk.setLatLng(_posAt(mk));
+  }
+  requestAnimationFrame(_animTick);
+}
+if(!_reducedMotion){ requestAnimationFrame(_animTick); }
+else { animMarkers.forEach(mk=>{mk.setOpacity(0);mk._shown=false;}); }
 
 /* ------- render places ------- */
 const placeLayers=[];
@@ -1278,7 +1626,7 @@ const legend=L.control({position:'bottomleft'});
 legend.onAdd=function(){this._div=L.DomUtil.create('div','legend');return this._div;};
 legend.addTo(map);
 function buildLegend(){
-  let h='<b>מקרא</b>';
+  let h='<button id="legendClose" title="סגור מקרא">×</button><b>מקרא</b>';
   if(layerState.provinces!==false){
     h+='<b style="font-size:11px;display:block;margin-bottom:2px">עושר מסחרי (פרובינציות)</b>';
     h+='<div style="height:9px;border-radius:5px;background:linear-gradient(90deg,#2c6eb6,#f0f0c8,#c82323)"></div>';
@@ -1300,9 +1648,9 @@ function buildLegend(){
     h+='<div class="li"><span class="dot" style="background:#c9c9c9;border-color:#7a2f10"></span>עיר</div>';
     h+='<div class="li"><span class="dot" style="background:#c9c9c9;border-color:#4a3a2a"></span>מבצר</div>';
   }
-  if(layerState.sea!==false) h+='<div class="li"><span class="sw" style="border-top-color:#1D5C8C;border-top-style:dashed"></span>נתיב ימי</div>';
-  if(layerState.road!==false) h+='<div class="li"><span class="sw" style="border-top-color:#9C5A2B"></span>דרך יבשתית</div>';
-  if(layerState.military!==false) h+='<div class="li"><span class="sw" style="border-top-color:#8B1E3F"></span>דרך צבאית</div>';
+  if(layerState.sea!==false) h+='<div class="li"><span class="sw" style="border-top-color:#E9B84A;border-top-style:dashed"></span>נתיב ימי</div>';
+  if(layerState.road!==false) h+='<div class="li"><span class="sw" style="border-top-color:#E7A24E"></span>דרך יבשתית</div>';
+  if(layerState.military!==false) h+='<div class="li"><span class="sw" style="border-top-color:#E24A63"></span>דרך צבאית</div>';
   if(layerState.river!==false) h+='<div class="li"><span class="sw" style="border-top-color:#2E9B96;border-top-style:dashed"></span>נהר</div>';
   if(layerState.grain!==false) h+='<div class="li"><span style="font-size:13px">🌾</span>אזור גידול תבואה</div>';
   h+='<div style="margin-top:5px;font-size:10.5px;color:#7a6f5c">עובי הקו ומהירות הזרימה = היקף הסחר · כיוון הזרימה = כיוון הסחר</div>';
@@ -1338,7 +1686,7 @@ function goodsHtml(list){
 }
 function srcHtml(ids){
   if(!ids||!ids.length) return '';
-  return '<div class="src">מקורות: '+ids.map(i=>SRC[i]?`<a href="${SRC[i].url}" target="_blank">${SRC[i].label}</a>`:i).join(' · ')+'</div>';
+  return '<div class="src">מקורות: '+ids.map(i=>SRC[i]?`<a href="${SRC[i].url}" target="_blank" rel="noopener noreferrer">${SRC[i].label}</a>`:i).join(' · ')+'</div>';
 }
 
 function selectPlace(m){
@@ -1372,7 +1720,7 @@ function selectPlace(m){
   detailsEl.innerHTML=`
     <h3>${d.he}</h3>
     <div class="latin">${d.latin}</div>
-    <span class="kind">${typeHe}</span>
+    <span class="kind">${typeHe}</span> <a class="wiki-link" data-wiki="${d.he}">🔗 ויקיפדיה</a>
     <div class="tnow">🕓 ${fmtYear(curYear)} · ${eraName(curYear)}</div>
     <div class="row"><span>${d.prov}</span><b>פרובינקיה</b></div>
     <div class="row"><span>≈ ${fmt(popNow)} תושבים <span style="color:#a6611a">${trend}</span></span><b>אוכלוסייה (${fmtYear(curYear)})</b></div>
@@ -1383,9 +1731,10 @@ function selectPlace(m){
     <div class="desc">${d.desc}</div>
     <b style="font-size:12px;color:#7a6f5c">הרכב אתני בשנת ${fmtYear(curYear)} (אחוז ושפה)</b>
     ${eth?pieChart(eth):'<div class="tc-none">אין נתונים</div>'}
-    <b style="font-size:12px;color:#7a6f5c;display:block;margin-top:8px">תוצרת עיקרית</b>${goodsHtml(d.goods)}
+    ${(()=>{const gy=goodsForYear(d.id,d.goods);return `<b style="font-size:12px;color:#7a6f5c;display:block;margin-top:8px">סחורות עיקריות · ${fmtYear(curYear)}</b>${goodsHtml(gy.goods)}${gy.note?`<div class="gnote">↹ ${gy.note}</div>`:''}`;})()}
     <div class="io-wrap">${exBlock}${imBlock}</div>
     <div class="io-note">נפח = יחידות מטען לשנה · מחיר בדינרים · אומדן להמחשה</div>
+    <button class="route-pick-btn" data-city="${d.id}">🧭 בחירת מסלול מכאן</button>
     ${srcHtml(d.sources)}`;
 }
 
@@ -1425,6 +1774,7 @@ function selectRoute(line){
     <div class="tc-total" style="margin:10px 0 4px"><b>${fmt(volNow)} יח' · ${fmt(denNow)} דינרים</b><span>${totLabel} · ${Math.round(eraF*100)}% מהשיא</span></div>
     <b style="font-size:12px;color:#7a6f5c">${compLabel}</b>
     ${compBars(e.total,e.branches)}
+    ${(()=>{const gy=goodsForYear(d.id,d.goods);return `<b style="font-size:12px;color:#7a6f5c;display:block;margin-top:8px">סחורות בנתיב · ${fmtYear(curYear)}</b>${goodsHtml(gy.goods)}${gy.note?`<div class="gnote">↹ ${gy.note}</div>`:''}`;})()}
     ${srcHtml(['orbis'])}`;
 }
 
@@ -1505,6 +1855,63 @@ function selectLegion(mk){
 
 map.on('click',e=>{ if(e.originalEvent.target===map._container){/*bg*/} });
 
+/* ---- פופאפ ויקיפדיה: נפתח מקישור, נסגר ב-× או בלחיצה על המפה ---- */
+function openWiki(rawTitle){
+  const box=document.getElementById('wikiPop'); if(!box||!rawTitle) return;
+  const title=String(rawTitle).split('·')[0].split('(')[0].replace(/[—–].*$/,'').trim();
+  box.style.display='block';
+  box.innerHTML='<button class="wiki-x" title="סגור">×</button><div class="wiki-body">טוען מוויקיפדיה…</div>';
+  // בנייה בטוחה: כל תוכן חיצוני מוזרק כטקסט (textContent) ולא כ-HTML, וכתובות מאומתות.
+  const safeUrl=(u,hosts)=>{ try{ const p=new URL(u,location.href); return (p.protocol==='https:' && hosts.some(hh=>p.hostname===hh||p.hostname.endsWith('.'+hh))) ? p.href : null; }catch(e){ return null; } };
+  const build=(head,text,linkUrl,linkText,imgUrl)=>{
+    box.textContent='';
+    const x=document.createElement('button'); x.className='wiki-x'; x.title='סגור'; x.textContent='×';
+    const body=document.createElement('div'); body.className='wiki-body';
+    const hEl=document.createElement('div'); hEl.className='wiki-h'; hEl.textContent=head; body.appendChild(hEl);
+    const safeImg=imgUrl?safeUrl(imgUrl,['wikimedia.org','wikipedia.org']):null;
+    if(safeImg){ const im=document.createElement('img'); im.src=safeImg; im.alt=''; im.referrerPolicy='no-referrer'; body.appendChild(im); }
+    const p=document.createElement('p'); p.textContent=text; body.appendChild(p);
+    const safeLink=safeUrl(linkUrl,['wikipedia.org']);
+    if(safeLink){ const a=document.createElement('a'); a.href=safeLink; a.target='_blank'; a.rel='noopener noreferrer'; a.textContent=linkText; body.appendChild(a); }
+    box.appendChild(x); box.appendChild(body);
+  };
+  fetch('https://he.wikipedia.org/api/rest_v1/page/summary/'+encodeURIComponent(title))
+    .then(r=>r.ok?r.json():Promise.reject())
+    .then(d=>{ if(box.style.display==='none') return;
+      const link=(d.content_urls&&d.content_urls.desktop&&d.content_urls.desktop.page)||('https://he.wikipedia.org/wiki/'+encodeURIComponent(title));
+      build(String(d.title||title), String(d.extract||''), link, 'קרא עוד בוויקיפדיה ↗', d.thumbnail&&d.thumbnail.source);
+    })
+    .catch(()=>{ build(title,'לא נמצא ערך מדויק בוויקיפדיה.','https://he.wikipedia.org/w/index.php?search='+encodeURIComponent(title),'חפש בוויקיפדיה ↗',null); });
+}
+document.getElementById('wikiPop').addEventListener('click',e=>{ if(e.target.classList.contains('wiki-x')) document.getElementById('wikiPop').style.display='none'; });
+map.on('click',()=>{ const w=document.getElementById('wikiPop'); if(w) w.style.display='none'; });
+detailsEl.addEventListener('click',e=>{ const a=e.target.closest('.wiki-link'); if(a){ e.preventDefault(); openWiki(a.dataset.wiki); } });
+document.getElementById('rulerBar').addEventListener('click',e=>{ const a=e.target.closest('.wiki-link'); if(a){ e.preventDefault(); openWiki(a.dataset.wiki); } });
+/* ---- סגירת/פתיחת המקרא ---- */
+legend._div.addEventListener('click',e=>{ if(e.target.id==='legendClose'){ legend._div.style.display='none'; document.getElementById('legendReopen').style.display='block'; } });
+document.getElementById('legendReopen').addEventListener('click',()=>{ legend._div.style.display=''; document.getElementById('legendReopen').style.display='none'; });
+
+/* ---- מחשבון סחר כפופאפ נגרר, נפתח מכרטיס העיר בכפתור "בחירת מסלול" ---- */
+function openTradeCalc(cityId){
+  const card=document.getElementById('tcCard'); if(!card) return;
+  card.style.display='flex';
+  const a=document.getElementById('tcA'), nm=document.getElementById('tcOriginName');
+  if(a){
+    const v='port:'+cityId, ok=[...a.options].some(o=>o.value===v);
+    a.value=ok?v:'';
+    if(nm) nm.textContent = ok ? placeById[cityId][1] : ((placeById[cityId]&&placeById[cityId][1])||'—')+' (אין נתיבים מתועדים)';
+    a.dispatchEvent(new Event('change'));
+  }
+}
+detailsEl.addEventListener('click',e=>{ const b=e.target.closest('.route-pick-btn'); if(b){ openTradeCalc(b.dataset.city); } });
+document.getElementById('tcClose').addEventListener('click',()=>{ document.getElementById('tcCard').style.display='none'; });
+(function(){ const card=document.getElementById('tcCard'), head=document.getElementById('tcHead'); if(!card||!head) return;
+  let drag=false,ox=0,oy=0;
+  head.addEventListener('mousedown',e=>{ if(e.target.id==='tcClose')return; const r=card.getBoundingClientRect(); card.style.transform='none'; card.style.left=r.left+'px'; card.style.top=r.top+'px'; ox=e.clientX-r.left; oy=e.clientY-r.top; drag=true; e.preventDefault(); });
+  window.addEventListener('mousemove',e=>{ if(!drag)return; card.style.left=Math.max(4,Math.min(window.innerWidth-80,e.clientX-ox))+'px'; card.style.top=Math.max(4,Math.min(window.innerHeight-40,e.clientY-oy))+'px'; });
+  window.addEventListener('mouseup',()=>drag=false);
+})();
+
 /* ======================================================================
    תצוגת סחורות במפה — רב-בחירה: אפשר לבחור לכל סחורה אם תוצג
    ====================================================================== */
@@ -1545,6 +1952,10 @@ function applyVisibility(){
     let w=l._base.weight, op=l._base.opacity;
     if(vis && (d.mode==='sea'||d.mode==='river')){    // "עיוורון ימי" — הנתיבים הימיים מתעבים/מתייבשים לפי התקופה
       w=l._base.weight*(0.28+0.72*ti); op=l._base.opacity*(0.32+0.68*ti);
+    }
+    else if(vis && (d.mode==='road'||d.mode==='military')){   // דרכים יבשתיות גדלות/קטנות לפי היקף הסחר בתקופה
+      const uf=urbanFactor(curYear);
+      w=l._base.weight*(0.35+0.65*uf); op=l._base.opacity;
     }
     if(l!==selected) l.setStyle({opacity:vis?op:0, weight:vis?w:0});
     const el=l.getElement&&l.getElement(); if(el) el.style.pointerEvents=vis?'':'none';
@@ -1644,15 +2055,16 @@ function makeOpt(v,label){const o=document.createElement('option');o.value=v;o.t
 function fillSelect(sel,placeholder,allow){
   sel.innerHTML='';
   sel.appendChild(makeOpt('',placeholder));
-  const ports=PLACES.filter(p=>p[8]).sort((a,b)=>a[1].localeCompare(b[1],'he'));
-  const og1=document.createElement('optgroup'); og1.label='ערי נמל';
+  const ports=PLACES.filter(p=>ROUTE_ENDPOINTS.has(p[0])).sort((a,b)=>a[1].localeCompare(b[1],'he'));
+  const og1=document.createElement('optgroup'); og1.label='ערים ונמלים';
   ports.forEach(p=>{const v='port:'+p[0]; if(allow&&!allow.has(v))return; og1.appendChild(makeOpt(v,p[1]));});
   if(og1.children.length) sel.appendChild(og1);
   const og2=document.createElement('optgroup'); og2.label='אזורי סחר';
   ZONES.forEach(z=>{const v='zone:'+z[0]; if(allow&&!allow.has(v))return; og2.appendChild(makeOpt(v,z[1]));});
   if(og2.children.length) sel.appendChild(og2);
 }
-const ALL_OPTIONS=[...PLACES.filter(p=>p[8]).map(p=>'port:'+p[0]), ...ZONES.map(z=>'zone:'+z[0])];
+const ROUTE_ENDPOINTS=new Set(routeDataAll.flatMap(r=>[r.o,r.d]));   // כל עיר שיש לה נתיב (לא רק נמלים)
+const ALL_OPTIONS=[...PLACES.filter(p=>ROUTE_ENDPOINTS.has(p[0])).map(p=>'port:'+p[0]), ...ZONES.map(z=>'zone:'+z[0])];
 // האם שני קצוות מחוברים בנתיב ישיר (ללא תלות בכיוון)
 function areConnected(a,b){
   const A=new Set(citiesOf(a)), B=new Set(citiesOf(b));
@@ -1673,7 +2085,7 @@ function labelOf(val){
   const z=ZONES.find(z=>z[0]===id); return z?z[1]:id;
 }
 
-function runTradeCalc(){
+function runTradeCalc(fit){
   const A=tcA.value, B=tcB.value;
   if(!A||!B){tcResult.innerHTML='<div class="tc-none">בחר מוצא ויעד ואז לחץ "חשב".</div>';return;}
   if(A===B){tcResult.innerHTML='<div class="tc-none">בחר שני קצוות שונים.</div>';return;}
@@ -1695,23 +2107,28 @@ function runTradeCalc(){
       <div class="tc-none">לא נמצא נתיב סחר ישיר מתועד בין שני הקצוות במאגר.<br>נסה קצוות אחרים (למשל אלכסנדריה ↔ אוסטיה, או מצרים ↔ איטליה).</div>`;
     return;
   }
-  const agg=aggregateEcon(matched);
-  let tUnits=0,tCost=0;
+  // אגרגציה מותאמת-תקופה: היקף הסחר והרכבו משתנים לפי השנה הנוכחית
+  const y=curYear, mm={}; let aTotal=0,aUnits=0,tUnits=0,tCost=0;
   let rows=matched.map(r=>{
-    const e=routeEconomics(r), tc=transportCost(r);
+    const f=eraTradeFactor(r.mode,y);
+    const goods=goodsForYear(r.id, r.goods).goods;
+    const e=routeEconomics({vol:r.vol,goods}), tc=transportCost(r);
+    const eTotal=Math.round(e.total*f);
+    e.branches.forEach(b=>{ if(!mm[b.c])mm[b.c]={den:0,units:0}; const den=Math.round(b.den*f),u=Math.round(b.units*f); mm[b.c].den+=den; mm[b.c].units+=u; aTotal+=den; aUnits+=u; });
     tUnits+=tc.units; tCost+=tc.total;
-    return `<div class="tc-route"><span>${placeById[r.o][1]} ← → ${placeById[r.d][1]} · ${MODE[r.mode].nameHe}</span><span class="v">${fmt(e.total)} ד' · שינוע ${fmt(tc.perUnit)}/יח'</span></div>`;
+    return `<div class="tc-route"><span>${placeById[r.o][1]} ← → ${placeById[r.d][1]} · ${MODE[r.mode].nameHe}</span><span class="v">${fmt(eTotal)} ד' · שינוע ${fmt(tc.perUnit)}/יח'</span></div>`;
   }).join('');
+  const agg={total:aTotal, totalUnits:aUnits, branches:Object.entries(mm).map(([c,v])=>({c,den:v.den,units:v.units})).sort((a,b)=>b.den-a.den)};
   const avgShip = tUnits ? Math.round(tCost/tUnits*10)/10 : 0;
   tcResult.innerHTML=`
     <h4>${labelOf(A)} ↔ ${labelOf(B)}</h4>
-    <div class="tc-total"><b>${fmt(agg.totalUnits)} יח' · ${fmt(agg.total)} דינרים</b><span>היקף סחר שנתי משוער בין הקצוות (אומדן להמחשה)</span></div>
+    <div class="tc-total"><b>${fmt(agg.totalUnits)} יח' · ${fmt(agg.total)} דינרים</b><span>היקף סחר שנתי משוער · ${fmtYear(curYear)} · ${eraName(curYear)} (אומדן)</span></div>
     <div class="ship"><span class="big">${fmt(avgShip)}</span> דינרים ממוצע לשינוע יחידת נפח במסלול</div>
     <b style="font-size:12px;color:#7a6f5c">הרכב הסחר — נפח ומחיר</b>
     ${compBars(agg.total,agg.branches)}
     <b style="font-size:12px;color:#7a6f5c;display:block;margin-top:8px">נתיבים מחברים (${matched.length})</b>
     ${rows}`;
-  if(bounds.length) map.fitBounds(L.latLngBounds(bounds).pad(0.3));
+  if(fit!==false && bounds.length) map.fitBounds(L.latLngBounds(bounds).pad(0.3));
 }
 function dimAllForCalc(){
   routeLayers.forEach(l=>l.setStyle({opacity:0.12,weight:1}));
@@ -1722,9 +2139,9 @@ function restoreAfterCalc(){ routeLayers.forEach(l=>l.setStyle(l._base)); if(typ
 // לאחר בחירת המוצא — היעד השני מוגבל רק לקצוות המחוברים אליו בנתיב ישיר
 tcA.addEventListener('change',()=>{
   tcResult.innerHTML=''; restoreAfterCalc();
-  if(!tcA.value){ fillSelect(tcB,'בחר מוצא תחילה…'); tcB.disabled=true; return; }
+  if(!tcA.value){ fillSelect(tcB,'אין נתיבים מהעיר הזו',new Set()); tcB.disabled=true; return; }
   const allow=new Set(ALL_OPTIONS.filter(v=>v!==tcA.value && areConnected(tcA.value,v)));
-  if(allow.size){ fillSelect(tcB,`בחר יעד מחובר (${allow.size})…`,allow); tcB.disabled=false; }
+  if(allow.size){ fillSelect(tcB,`בחר יעד — ${allow.size} מחוברים…`,allow); tcB.disabled=false; }
   else { fillSelect(tcB,'אין יעד מחובר ישיר',new Set()); tcB.disabled=true; }
 });
 tcB.addEventListener('change',()=>{ if(tcA.value&&tcB.value) runTradeCalc(); });
@@ -1784,6 +2201,9 @@ function setYear(y,fromSlider){
   ensureEra();          // החלפת גבולות ה-snapshot אם חצינו לתקופה אחרת
   applyVisibility();
   updateTimeStats();
+  updateRulerBar();     // עדכון שורת השליט (קיסר / קונסולים) והעיר בה התגורר
+  const _tc=document.getElementById('tcCard');   // עדכון מחשבון הסחר אם פתוח
+  if(_tc && _tc.style.display && _tc.style.display!=='none'){ const _a=document.getElementById('tcA'),_b=document.getElementById('tcB'); if(_a&&_b&&_a.value&&_b.value) runTradeCalc(false); }
   if(curSelect) curSelect();   // רענון פאנל הפרטים למצב העיר/הנתיב בשנה הנוכחית
 }
 slider.addEventListener('input',()=>setYear(indexToHist(+slider.value),true));
@@ -1798,6 +2218,64 @@ function startPlay(){ if(curYear>=MAX_Y-1) setYear(MIN_Y); playing=true; playBtn
 function stopPlay(){ playing=false; playBtn.textContent='▶'; if(playTimer){clearInterval(playTimer);playTimer=null;} }
 playBtn.addEventListener('click',()=>playing?stopPlay():startPlay());
 
+/* ---- שליטי רומא לאורך הזמן (קיסר / קונסולים) והעיר בה התגוררו ----
+   [from, to(לא כולל), שם, עיר מושב, מזהה-עיר-במפה או null] */
+const EMPERORS = [
+  [-600,-27,"הרפובליקה — שני קונסולים נבחרים מדי שנה","רומא","rome"],
+  [-27,14,"אוגוסטוס","רומא","rome"],
+  [14,37,"טיבריוס","רומא / קפרי","rome"],
+  [37,41,"קליגולה","רומא","rome"],
+  [41,54,"קלאודיוס","רומא","rome"],
+  [54,68,"נירון","רומא","rome"],
+  [68,69,"שנת ארבעת הקיסרים","רומא","rome"],
+  [69,79,"אספסיאנוס","רומא","rome"],
+  [79,81,"טיטוס","רומא","rome"],
+  [81,96,"דומיטיאנוס","רומא","rome"],
+  [96,98,"נרווה","רומא","rome"],
+  [98,117,"טראיאנוס","רומא","rome"],
+  [117,138,"אדריאנוס","רומא (ונדודים באימפריה)","rome"],
+  [138,161,"אנטונינוס פיוס","רומא","rome"],
+  [161,180,"מרקוס אורליוס","רומא / חזית הדנובה","rome"],
+  [180,192,"קומודוס","רומא","rome"],
+  [193,193,"פרטינקס / דידיוס יוליאנוס","רומא","rome"],
+  [193,211,"ספטימיוס סוורוס","רומא","rome"],
+  [211,217,"קרקלה","רומא","rome"],
+  [217,218,"מקרינוס","אנטיוכיה","antioch"],
+  [218,222,"אלגבלוס","רומא","rome"],
+  [222,235,"אלכסנדר סוורוס","רומא","rome"],
+  [235,284,"משבר המאה השלישית — קיסרי-חיילים מתחלפים","נעים עם הצבא",null],
+  [284,306,"דיוקלטיאנוס והטטררכיה","ניקומדיה","nicomedia"],
+  [306,337,"קונסטנטינוס הגדול","קונסטנטינופול (מ-330)","byzantium"],
+  [337,364,"בית קונסטנטינוס (קונסטנטיוס II, יוליאנוס)","קונסטנטינופול / אנטיוכיה","byzantium"],
+  [364,395,"הוולנטיניאנים ותאודוסיוס I","מדיולנום ↔ קונסטנטינופול","mediolanum"],
+  [395,477,"האימפריה המערבית עד נפילתה (הונוריוס … רומולוס אוגוסטולוס)","רוונה (מ-402)","ravenna"]
+];
+function currentRuler(y){ for(const e of EMPERORS){ if(y>=e[0] && y<e[1]) return e; } return null; }
+function updateRulerBar(){
+  const bar=document.getElementById('rulerBar'); if(!bar) return;
+  const e=currentRuler(curYear);
+  if(!e){ bar.style.display='none'; return; }
+  bar.style.display='flex';
+  const from=e[0], to=e[1], name=e[2], city=e[3], pid=e[4];
+  const isRep = name.indexOf('הרפובליקה')===0;
+  const reign = isRep ? 'הרפובליקה' : (fmtYear(from)+'–'+fmtYear(Math.min(to,476)));
+  const label = isRep ? 'שלטון' : 'קיסר';
+  const hasPlace = pid && placeById[pid];
+  const cityHtml = hasPlace ? `<a class="ruler-city" data-pid="${pid}">${city}</a>` : `<span>${city}</span>`;
+  bar.innerHTML = `<span class="ruler-ico">🏛</span>`+
+    `<span class="ruler-name">${name}</span>`+
+    `<span class="ruler-sep">·</span>`+
+    `<span class="ruler-reign">${reign}</span>`+
+    `<span class="ruler-sep">·</span>`+
+    `<span class="ruler-res">מושב: ${cityHtml}</span>`+
+    (isRep?'':`<a class="wiki-link" data-wiki="${name}" style="color:#E9C46A;margin-inline-start:4px">🔗</a>`);
+}
+document.getElementById('rulerBar').addEventListener('click',ev=>{
+  const a=ev.target.closest('.ruler-city'); if(!a) return;
+  const pid=a.dataset.pid, mk=placeLayers.find(m=>m._data.id===pid);
+  if(mk){ map.setView(mk.getLatLng(), Math.max(map.getZoom(),5), {animate:true}); selectPlace(mk); }
+});
+
 setYear(150);  // אתחול לשיא האימפריה
 
 // small CSS injected for city labels
@@ -1805,6 +2283,27 @@ const st=document.createElement('style');
 st.textContent=`.city-lbl{background:transparent;border:0;box-shadow:none;color:#3a2f20;font-weight:700;font-size:11px;text-shadow:0 0 3px #f3e9d6,0 0 3px #f3e9d6}
 .leaflet-tooltip.zt{background:#fbf7ee;border:1px solid #d9cbb0;color:#1F3864;font-weight:600}`;
 document.head.appendChild(st);
+
+/* ---- כרטיס פרטים צף ונגרר: נפתח אוטומטית על בחירה, נגרר בכותרת, נסגר ב-× ---- */
+(function(){
+  const card=document.getElementById('floatCard'), head=document.getElementById('floatHead'),
+        closeBtn=document.getElementById('floatClose'), body=document.getElementById('details');
+  if(!card||!body) return;
+  // הצגה אוטומטית כשמוזרק תוכן אמיתי (יש כותרת h3)
+  new MutationObserver(()=>{ if(body.querySelector('h3')) card.classList.add('show'); })
+    .observe(body,{childList:true});
+  closeBtn.addEventListener('click',()=>{ card.classList.remove('show'); if(typeof resetHighlight==='function') resetHighlight(); curSelect=null; });
+  // גרירה (עכבר + מגע)
+  let drag=false,ox=0,oy=0;
+  function begin(x,y){ const r=card.getBoundingClientRect(); card.style.transform='none'; card.style.left=r.left+'px'; card.style.top=r.top+'px'; ox=x-r.left; oy=y-r.top; drag=true; }
+  function moveTo(x,y){ if(!drag) return; card.style.left=Math.max(4,Math.min(window.innerWidth-70,x-ox))+'px'; card.style.top=Math.max(4,Math.min(window.innerHeight-40,y-oy))+'px'; }
+  head.addEventListener('mousedown',e=>{ if(e.target===closeBtn) return; begin(e.clientX,e.clientY); e.preventDefault(); });
+  window.addEventListener('mousemove',e=>moveTo(e.clientX,e.clientY));
+  window.addEventListener('mouseup',()=>drag=false);
+  head.addEventListener('touchstart',e=>{ const t=e.touches[0]; if(t) begin(t.clientX,t.clientY); },{passive:true});
+  window.addEventListener('touchmove',e=>{ const t=e.touches[0]; if(t) moveTo(t.clientX,t.clientY); },{passive:true});
+  window.addEventListener('touchend',()=>drag=false);
+})();
 </script>
 </body>
 </html>
