@@ -11,7 +11,7 @@
 
 <img src="docs/screenshot.jpg" alt="The atlas at AD 150: provinces shaded by wealth, sea, land, river and military routes, legion bases and grain regions" width="900">
 
-**[▶ Open the live atlas](https://pinchasrosenberg.github.io/roman-atlas/)**
+**[▶ Open the live atlas](https://pinchasrosenberg.github.io/roman-atlas-route/)**
 
 </div>
 
